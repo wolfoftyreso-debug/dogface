@@ -1,4 +1,5 @@
 import { sha256 } from "./crypto";
+import { dbConfigured } from "./db";
 import {
   bumpGenerationCounter,
   checkRateLimit,
@@ -15,7 +16,14 @@ import {
   setJobStatus,
 } from "./generation.server";
 import { validateImagePayload } from "./image";
-import { clientIp, ensureVisitor, getVisitorById, remainingOf } from "./session.server";
+import {
+  clientIp,
+  cookieVisitor,
+  ensureVisitor,
+  getVisitorById,
+  remainingOf,
+  writeCookieVisitor,
+} from "./session.server";
 import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult } from "./types";
 
@@ -32,8 +40,9 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
   if (payload !== "ok") return fail(payload);
   if (!isRequestId(requestId)) return fail("failed");
   const hasKey = Boolean(env("XAI_API_KEY"));
-  console.info(`[hundtvilling] generate start hasKey=${hasKey} req=${requestId.slice(0, 8)}`);
+  console.info(`[hundtvilling] generate start hasKey=${hasKey} db=${dbConfigured()} req=${requestId.slice(0, 8)}`);
   if (!hasKey) return fail("unavailable");
+  if (!dbConfigured()) return runWithoutDb(image, requestId);
 
   await expireStaleJobs();
   if (!(await generationsEnabled())) return fail("disabled");
@@ -170,8 +179,59 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
   }
 }
 
+async function runWithoutDb(image: string, requestId: string): Promise<GenerateResult> {
+  const visitor = cookieVisitor();
+  if (remainingOf(visitor) <= 0) return fail("payment_required", 0);
+
+  const kind = visitor.freeRemaining > 0 ? "free" : "paid";
+  if (kind === "free") visitor.freeRemaining = 0;
+  else visitor.paidRemaining = Math.max(0, visitor.paidRemaining - 1);
+  writeCookieVisitor(visitor);
+
+  try {
+    const { analyzePhoto, produceIdentityDog, AppError } = await import("./xai.server.ts");
+    const analysis = await analyzePhoto(image);
+    if (!analysis.validHuman || analysis.subjectSelection === "none") {
+      if (kind === "free") visitor.freeRemaining = 1;
+      else visitor.paidRemaining += 1;
+      writeCookieVisitor(visitor);
+      return fail("no_human", remainingOf(visitor));
+    }
+    if (analysis.subjectSelection === "ambiguous") {
+      if (kind === "free") visitor.freeRemaining = 1;
+      else visitor.paidRemaining += 1;
+      writeCookieVisitor(visitor);
+      return fail("ambiguous", remainingOf(visitor));
+    }
+    if (!analysis.breedId && !analysis.breedName) {
+      if (kind === "free") visitor.freeRemaining = 1;
+      else visitor.paidRemaining += 1;
+      writeCookieVisitor(visitor);
+      return fail("failed", remainingOf(visitor));
+    }
+    const imageDataUrl = await produceIdentityDog(image, analysis);
+    return {
+      ok: true,
+      id: requestId,
+      status: "ready",
+      breed: analysis.breedName,
+      reason: analysis.reason,
+      imageDataUrl,
+      remaining: remainingOf(visitor),
+    };
+  } catch (err) {
+    const { AppError } = await import("./xai.server.ts");
+    if (kind === "free") visitor.freeRemaining = 1;
+    else visitor.paidRemaining += 1;
+    writeCookieVisitor(visitor);
+    const code = err instanceof AppError ? err.code : "failed";
+    return fail(code, remainingOf(visitor));
+  }
+}
+
 export async function readGeneration(id: string): Promise<GenerateResult> {
   if (!isRequestId(id)) return fail("failed");
+  if (!dbConfigured()) return fail("failed");
   const visitor = await ensureVisitor();
   const job = await getJob(id, visitor.id);
   if (!job) return fail("failed", remainingOf(visitor));

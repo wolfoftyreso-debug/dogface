@@ -1,6 +1,7 @@
 import { getCookie, getRequest, setCookie } from "@tanstack/react-start/server";
 import { getSql } from "./db";
-import { randomId, sha256 } from "./crypto";
+import { hmacSha256, randomId, safeEqual, sha256 } from "./crypto";
+import { env } from "./env.server.ts";
 
 const COOKIE = "ht_sid";
 const MAX_AGE = 60 * 60 * 24 * 400;
@@ -105,4 +106,54 @@ export async function attachCookieToVisitor(visitorId: string): Promise<void> {
 
 export function remainingOf(visitor: Visitor): number {
   return Math.max(0, visitor.freeRemaining) + Math.max(0, visitor.paidRemaining);
+}
+
+const VIS_COOKIE = "ht_vis";
+
+function visitorSecret(): string {
+  return env("SESSION_SECRET") || env("XAI_API_KEY") || "hundtvilling-dev";
+}
+
+function signVisitor(visitor: Visitor): string {
+  const body = `${visitor.id}.${visitor.freeRemaining}.${visitor.paidRemaining}`;
+  return `${body}.${hmacSha256(visitorSecret(), body)}`;
+}
+
+function parseVisitor(raw: string): Visitor | null {
+  const parts = raw.split(".");
+  if (parts.length !== 4) return null;
+  const [id, freeRaw, paidRaw, sig] = parts;
+  if (!id || !sig) return null;
+  const body = `${id}.${freeRaw}.${paidRaw}`;
+  const expected = hmacSha256(visitorSecret(), body);
+  if (!safeEqual(expected, sig)) return null;
+  const freeRemaining = Number(freeRaw);
+  const paidRemaining = Number(paidRaw);
+  if (!Number.isFinite(freeRemaining) || !Number.isFinite(paidRemaining)) return null;
+  return {
+    id,
+    freeRemaining: Math.max(0, Math.min(1, Math.floor(freeRemaining))),
+    paidRemaining: Math.max(0, Math.min(50, Math.floor(paidRemaining))),
+    restoreCodeHash: null,
+  };
+}
+
+export function cookieVisitor(): Visitor {
+  const existing = getCookie(VIS_COOKIE)?.trim();
+  if (existing) {
+    const parsed = parseVisitor(existing);
+    if (parsed) return parsed;
+  }
+  const visitor: Visitor = {
+    id: randomId(16),
+    freeRemaining: 1,
+    paidRemaining: 0,
+    restoreCodeHash: null,
+  };
+  setCookie(VIS_COOKIE, signVisitor(visitor), cookieOptions());
+  return visitor;
+}
+
+export function writeCookieVisitor(visitor: Visitor): void {
+  setCookie(VIS_COOKIE, signVisitor(visitor), cookieOptions());
 }

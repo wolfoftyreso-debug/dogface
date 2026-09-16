@@ -8,6 +8,10 @@ function databaseUrl(): string | undefined {
   return env("DATABASE_URL");
 }
 
+export function dbConfigured(): boolean {
+  return Boolean(databaseUrl());
+}
+
 function runningOnVercel(): boolean {
   return Boolean(process.env["VERCEL"]);
 }
