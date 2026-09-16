@@ -1,0 +1,255 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f6ead8;
+  --color-surface: #fff8ee;
+  --color-bg-subtle: #f0d9b8;
+  --color-fg: #3a2714;
+  --color-muted: #7a5c42;
+  --color-subtle: #a18468;
+  --color-primary: #4a2c14;
+  --color-primary-fg: #fff8ee;
+  --color-border: color-mix(in oklab, var(--color-fg) 14%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--color-fg) 26%, transparent);
+  --color-danger: #8f2d22;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+  --radius-3xl: 32px;
+
+  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: clamp(2rem, 1.4rem + 2.4vw, 2.75rem);
+  --text-3xl: clamp(2.25rem, 1.5rem + 3vw, 3.25rem);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+    background-color: var(--color-bg);
+    background-image:
+      linear-gradient(
+        to top,
+        var(--color-bg) 0%,
+        color-mix(in oklab, var(--color-bg) 88%, transparent) 18%,
+        transparent 42%
+      ),
+      radial-gradient(
+        ellipse 70% 52% at 50% 32%,
+        color-mix(in oklab, var(--color-bg) 70%, transparent) 0%,
+        transparent 74%
+      ),
+      url("/dogs-pattern.jpg");
+    background-size: auto, auto, 17rem;
+    background-repeat: no-repeat, repeat;
+    background-position: center, 0 0;
+    color: var(--color-fg);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: transparent;
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-fg);
+    outline-offset: 3px;
+  }
+}
+
+.app-shell {
+  width: min(27.5rem, 100%);
+  margin-inline: auto;
+  min-height: 100dvh;
+  padding-top: max(1.25rem, env(safe-area-inset-top));
+  padding-bottom: max(1.75rem, calc(env(safe-area-inset-bottom) + 1.25rem));
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+}
+
+.action-card {
+  padding: 0.75rem;
+  border-radius: var(--radius-2xl);
+  background: var(--color-surface);
+  box-shadow: 0 10px 28px color-mix(in oklab, var(--color-fg) 10%, transparent);
+  outline: 1px solid var(--color-border);
+}
+
+.legal-note {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  text-align: center;
+  outline: 1px solid var(--color-border);
+}
+
+.photo-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 52dvh;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-subtle);
+}
+
+.photo-square {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 52dvh;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-subtle);
+}
+
+.pay-sheet {
+  animation: sheet-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.loading-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-muted) 0%,
+    var(--color-fg) 45%,
+    var(--color-muted) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.work-photo {
+  filter: blur(8px);
+  transform: scale(1.06);
+}
+
+.work-spin {
+  animation: work-spin 0.9s linear infinite;
+}
+
+.work-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-bg-subtle);
+}
+
+.work-bar-fill {
+  height: 100%;
+  width: 10%;
+  border-radius: inherit;
+  background: var(--color-fg);
+  animation: work-bar 55s cubic-bezier(0.12, 0.64, 0.2, 1) forwards;
+}
+
+@keyframes work-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes work-bar {
+  0% {
+    width: 8%;
+  }
+  18% {
+    width: 36%;
+  }
+  45% {
+    width: 58%;
+  }
+  75% {
+    width: 78%;
+  }
+  100% {
+    width: 92%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-shimmer {
+    animation: none;
+    color: var(--color-muted);
+    background: none;
+  }
+
+  .pay-sheet {
+    animation: none;
+  }
+
+  .work-photo {
+    filter: none;
+    transform: none;
+    opacity: 0.55;
+  }
+
+  .work-spin,
+  .work-bar-fill {
+    animation: none;
+  }
+
+  .work-bar-fill {
+    width: 55%;
+  }
+}
