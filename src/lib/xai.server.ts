@@ -6,6 +6,7 @@ import {
   extractJsonObject,
   parseAnalysis,
 } from "./analysis";
+import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode } from "./types";
 
 const ANALYSIS_TIMEOUT_MS = 35_000;
@@ -30,7 +31,7 @@ function imageModel(): string {
 }
 
 async function xaiFetch(path: string, body: unknown, timeoutMs: number): Promise<Response> {
-  const apiKey = process.env.XAI_API_KEY;
+  const apiKey = env("XAI_API_KEY");
   if (!apiKey) throw new AppError("unavailable");
 
   let res: Response;

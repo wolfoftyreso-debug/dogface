@@ -16,6 +16,7 @@ import {
 } from "./generation.server";
 import { validateImagePayload } from "./image";
 import { clientIp, ensureVisitor, getVisitorById, remainingOf } from "./session.server";
+import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult } from "./types";
 
 function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
@@ -30,7 +31,7 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
   const payload = validateImagePayload(image);
   if (payload !== "ok") return fail(payload);
   if (!isRequestId(requestId)) return fail("failed");
-  const hasKey = Boolean(process.env.XAI_API_KEY?.trim());
+  const hasKey = Boolean(env("XAI_API_KEY"));
   console.info(`[hundtvilling] generate start hasKey=${hasKey} req=${requestId.slice(0, 8)}`);
   if (!hasKey) return fail("unavailable");
 
