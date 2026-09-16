@@ -156,7 +156,7 @@ export async function expireStaleJobs(): Promise<void> {
     update generations
     set status = 'expired', updated_at = now()
     where status in ('reserved', 'analyzing', 'generating')
-      and created_at < now() - interval '3 minutes'
+      and created_at < now() - interval '6 minutes'
     returning id, visitor_id, reserved_kind
   `;
   for (const job of stale) {

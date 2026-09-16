@@ -98,7 +98,7 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
 
   try {
     await setJobStatus(requestId, "analyzing");
-    const { analyzePhoto, generateDogImage } = await import("./xai.server.ts");
+    const { analyzePhoto, produceIdentityDog } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "no_human" });
@@ -106,12 +106,17 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
       const latest = await getVisitorById(visitor.id);
       return fail("no_human", latest ? remainingOf(latest) : 1);
     }
-    if (analysis.subjectSelection === "ambiguous" || !analysis.breedId) {
-      const code = analysis.subjectSelection === "ambiguous" ? "ambiguous" : "failed";
-      const moved = await setJobStatus(requestId, "rejected", { errorCode: code });
+    if (analysis.subjectSelection === "ambiguous") {
+      const moved = await setJobStatus(requestId, "rejected", { errorCode: "ambiguous" });
       if (moved) await releaseCredit(visitor.id, kind);
       const latest = await getVisitorById(visitor.id);
-      return fail(code, latest ? remainingOf(latest) : undefined);
+      return fail("ambiguous", latest ? remainingOf(latest) : undefined);
+    }
+    if (!analysis.breedId && !analysis.breedName) {
+      const moved = await setJobStatus(requestId, "rejected", { errorCode: "failed" });
+      if (moved) await releaseCredit(visitor.id, kind);
+      const latest = await getVisitorById(visitor.id);
+      return fail("failed", latest ? remainingOf(latest) : undefined);
     }
 
     await setJobStatus(requestId, "generating", {
@@ -119,7 +124,7 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
       breedName: analysis.breedName,
       reason: analysis.reason,
     });
-    const imageDataUrl = await generateDogImage(image, analysis);
+    const imageDataUrl = await produceIdentityDog(image, analysis);
     const marked = await setJobStatus(requestId, "ready", {
       breedId: analysis.breedId,
       breedName: analysis.breedName,

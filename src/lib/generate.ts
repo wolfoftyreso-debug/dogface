@@ -10,7 +10,8 @@ export const generateDogTwin = createServerFn({ method: "POST" })
     try {
       const { runDogTwin } = await import("./generate-run.server.ts");
       return await runDogTwin(data.image, data.requestId);
-    } catch {
+    } catch (err) {
+      console.info("[hundtvilling] generateDogTwin", err instanceof Error ? err.message : "error");
       return { ok: false, code: "failed", message: ERROR_MESSAGES.failed };
     }
   });

@@ -1,11 +1,11 @@
 import {
   ANALYSIS_RESPONSE_FORMAT,
   ANALYSIS_SYSTEM_PROMPT,
+  ANALYSIS_USER_TEXT,
   buildGenerationPrompt,
   extractJsonObject,
   parseAnalysis,
 } from "./analysis";
-import { breedCatalogForPrompt } from "./breeds";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode } from "./types";
 
 const ANALYSIS_TIMEOUT_MS = 35_000;
@@ -55,12 +55,13 @@ async function xaiFetch(path: string, body: unknown, timeoutMs: number): Promise
   }
 
   if (!res.ok) {
-    console.info(`[hundtvilling] xAI ${path} status=${res.status}`);
+    let snippet = "";
     try {
-      await res.arrayBuffer();
+      snippet = (await res.text()).slice(0, 240);
     } catch {
       // drain only
     }
+    console.info(`[hundtvilling] xAI ${path} status=${res.status} body=${snippet}`);
     if (res.status === 429) throw new AppError("rate_limit");
     if (res.status === 408 || res.status === 504) throw new AppError("timeout");
     throw new AppError("failed");
@@ -72,7 +73,7 @@ export async function analyzePhoto(imageDataUrl: string): Promise<AnalysisResult
   const body = {
     model: visionModel(),
     reasoning_effort: "low",
-    max_tokens: 900,
+    max_tokens: 1200,
     temperature: 0.1,
     response_format: ANALYSIS_RESPONSE_FORMAT,
     messages: [
@@ -86,7 +87,7 @@ export async function analyzePhoto(imageDataUrl: string): Promise<AnalysisResult
           },
           {
             type: "text",
-            text: `Measure this person. Pick breedId from this catalog only: ${breedCatalogForPrompt()}. Lock hair pigment to coat and iris pigment to dog eyes. Return only the structured result.`,
+            text: ANALYSIS_USER_TEXT,
           },
         ],
       },
@@ -100,7 +101,10 @@ export async function analyzePhoto(imageDataUrl: string): Promise<AnalysisResult
   const content = json.choices?.[0]?.message?.content;
   if (!content) throw new AppError("failed");
   const parsed = parseAnalysis(extractJsonObject(content));
-  if (!parsed) throw new AppError("failed");
+  if (!parsed) {
+    console.info("[hundtvilling] analysis parse failed");
+    throw new AppError("failed");
+  }
   return parsed;
 }
 
@@ -156,4 +160,11 @@ export async function generateDogImage(
   const res = await xaiFetch("/images/edits", body, IMAGE_TIMEOUT_MS);
   const json = (await res.json()) as ImagePayload;
   return await dataUrlFromImagePayload(json);
+}
+
+export async function produceIdentityDog(
+  imageDataUrl: string,
+  analysis: AnalysisResult,
+): Promise<string> {
+  return generateDogImage(imageDataUrl, analysis);
 }

@@ -33,9 +33,9 @@ export const ERROR_MESSAGES: Record<GenerateErrorCode, string> = {
   no_human: "Vi behöver ett tydligt foto av en person.",
   ambiguous: "Flera personer syns lika tydligt. Ta ett foto med en huvudperson.",
   rate_limit: "För många försök. Vänta en minut och prova igen.",
-  unavailable: "Kunde inte skapa hunden just nu. Prova igen.",
+  unavailable: "Bildtjänsten är inte redo just nu. Prova igen om en stund.",
   timeout: "Det tog för lång tid. Fotot är kvar — prova igen.",
-  failed: "Kunde inte skapa hunden just nu. Prova igen.",
+  failed: "Kunde inte skapa hunden. Fotot är kvar — prova igen.",
   payment_required: "Din första bild är förbrukad. Köp 5 bilder för 2,99 USD.",
   payment_failed: "Betalningen slutfördes inte. Fotot är kvar.",
   payment_unavailable: "Köp är inte tillgängliga just nu. Prova senare.",
@@ -56,6 +56,26 @@ export type AnalysisResult = {
   eyes: string;
   gaze: string;
   expression: string;
+  eyeGeometry: string;
+  facialGeometry: string;
+  headPose: string;
+  hairAndFurnishings: string;
+  colorMap: string;
+  identityAnchors: string[];
+};
+
+export type QcResult = {
+  acceptable: boolean;
+  canineAnatomyValid: boolean;
+  gazePreserved: boolean;
+  eyeRelationshipPreserved: boolean;
+  posePreserved: boolean;
+  expressionPreserved: boolean;
+  identityAnchorsPreserved: number;
+  identityAnchorsTotal: number;
+  genericBreed: boolean;
+  weakestFeatures: string[];
+  correctionInstructions: string[];
 };
 
 export type GenerateOk = {

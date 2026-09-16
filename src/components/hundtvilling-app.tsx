@@ -16,7 +16,7 @@ import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
 import { ERROR_MESSAGES, type HistoryItem } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 
-const GENERATE_WAIT_MS = 90_000;
+const GENERATE_WAIT_MS = 210_000;
 
 function waitWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -168,8 +168,8 @@ export function HundtvillingApp() {
     try {
       const generatePromise = generateDogTwin({ data: { image, requestId } });
       const poll = (async () => {
-        for (let i = 0; i < 20; i += 1) {
-          await new Promise((resolve) => window.setTimeout(resolve, 4000));
+        for (let i = 0; i < 42; i += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 5000));
           const job = await getGeneration({ data: { id: requestId } });
           if (job.ok && job.status === "ready") return job;
           if (!job.ok && job.code !== "failed") return job;
@@ -325,7 +325,7 @@ export function HundtvillingApp() {
             <article key={item.id} className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
                 <div className="photo-square">
-                  <img src={item.imageDataUrl} alt={`En ${item.breed}`} className="size-full object-cover" />
+                  <img src={item.imageDataUrl} alt={`En ${item.breed}`} className="size-full object-contain" />
                 </div>
               </div>
               <div>
@@ -362,7 +362,7 @@ export function HundtvillingApp() {
         {preview ? (
           <div className="relative overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
             <div className="photo-frame">
-              <img src={preview} alt="Valt foto" className="size-full object-cover" />
+              <img src={preview} alt="Valt foto" className="size-full object-contain" />
             </div>
             {!working ? (
               <button
@@ -386,7 +386,7 @@ export function HundtvillingApp() {
             <p className="text-base font-medium">
               {workStep === "read" ? "Läser bilden …" : "Skapar din hundtvilling …"}
             </p>
-            <p className="text-sm text-muted">Det kan ta ungefär en minut. Låt skärmen vara öppen.</p>
+            <p className="text-sm text-muted">Det kan ta ett par minuter. Låt skärmen vara öppen.</p>
           </div>
         ) : null}
 
