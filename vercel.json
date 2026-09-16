@@ -4,10 +4,5 @@
       "path": "/api/cron/housekeeping",
       "schedule": "15 * * * *"
     }
-  ],
-  "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 300
-    }
-  }
+  ]
 }

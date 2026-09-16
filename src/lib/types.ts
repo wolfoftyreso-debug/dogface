@@ -109,4 +109,5 @@ export type Balance = {
   freeRemaining: number;
   paidRemaining: number;
   paymentsReady: boolean;
+  aiReady: boolean;
 };

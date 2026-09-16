@@ -78,6 +78,7 @@ export async function readBalance() {
     freeRemaining: visitor.freeRemaining,
     paidRemaining: visitor.paidRemaining,
     paymentsReady: paymentsReady(),
+    aiReady: Boolean(process.env.XAI_API_KEY?.trim()),
   };
 }
 

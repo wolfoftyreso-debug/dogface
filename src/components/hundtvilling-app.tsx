@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Camera, Copy, Download, ImagePlus, Images, Loader2, Share2, X } from "lucide-react";
+import { Camera, Copy, Download, ImagePlus, Images, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateDogTwin, getGeneration } from "@/lib/generate";
 import { confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
@@ -60,6 +60,7 @@ export function HundtvillingApp() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [freeRemaining, setFreeRemaining] = useState(1);
   const [paymentsReady, setPaymentsReady] = useState(true);
+  const [aiReady, setAiReady] = useState(true);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreCode, setRestoreCode] = useState<string | null>(null);
   const [paidNotice, setPaidNotice] = useState<string | null>(null);
@@ -72,6 +73,7 @@ export function HundtvillingApp() {
         setRemaining(balance.remaining);
         setFreeRemaining(balance.freeRemaining);
         setPaymentsReady(balance.paymentsReady);
+        setAiReady(balance.aiReady !== false);
       })
       .catch(() => undefined);
     void loadDraft().then((draft) => {
@@ -223,6 +225,10 @@ export function HundtvillingApp() {
 
   async function onPrimary() {
     if (working) return;
+    if (!aiReady) {
+      setError(ERROR_MESSAGES.unavailable);
+      return;
+    }
     if (remaining === 0) {
       if (!paymentsReady) {
         setError(ERROR_MESSAGES.payment_unavailable);
@@ -360,7 +366,7 @@ export function HundtvillingApp() {
           ))}
 
         {preview ? (
-          <div className="relative overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
+          <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
             <div className="photo-frame">
               <img src={preview} alt="Valt foto" className="size-full object-contain" />
             </div>
@@ -371,10 +377,9 @@ export function HundtvillingApp() {
                   setPreview(null);
                   void clearDraft();
                 }}
-                className="absolute top-3 right-3 flex size-11 items-center justify-center rounded-lg bg-surface/90 text-fg ring-1 ring-border"
-                aria-label="Ta bort foto"
+                className="mt-2 w-full py-2 text-center text-sm font-medium text-muted"
               >
-                <X className="size-4" strokeWidth={2} />
+                Ta bort foto
               </button>
             ) : null}
           </div>
@@ -396,7 +401,7 @@ export function HundtvillingApp() {
           </p>
         ) : null}
         {error ? (
-          <p className="text-center text-sm text-danger" role="alert">
+          <p className="rounded-xl bg-surface px-3 py-2 text-center text-sm text-danger ring-1 ring-border" role="alert">
             {error}
           </p>
         ) : null}

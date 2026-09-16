@@ -95,8 +95,8 @@
   width: min(27.5rem, 100%);
   margin-inline: auto;
   min-height: 100dvh;
-  /* Extra top space so the Grok remix bar and iOS status bar don't cover the title. */
-  padding-top: calc(env(safe-area-inset-top, 0px) + 4.25rem);
+  /* Grok remix bar sits under the iOS status bar; keep the title below both. */
+  padding-top: calc(env(safe-area-inset-top, 0px) + 5.5rem);
   padding-bottom: max(1.75rem, calc(env(safe-area-inset-bottom) + 1.25rem));
   padding-left: max(1.25rem, env(safe-area-inset-left));
   padding-right: max(1.25rem, env(safe-area-inset-right));
@@ -126,10 +126,10 @@
   position: relative;
   width: 100%;
   aspect-ratio: 3 / 4;
-  max-height: 48dvh;
+  max-height: 36dvh;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  background: var(--color-bg-subtle);
+  background: #2a1c10;
 }
 
 .photo-frame img,

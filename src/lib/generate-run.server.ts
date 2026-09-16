@@ -30,7 +30,9 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
   const payload = validateImagePayload(image);
   if (payload !== "ok") return fail(payload);
   if (!isRequestId(requestId)) return fail("failed");
-  if (!process.env.XAI_API_KEY) return fail("unavailable");
+  const hasKey = Boolean(process.env.XAI_API_KEY?.trim());
+  console.info(`[hundtvilling] generate start hasKey=${hasKey} req=${requestId.slice(0, 8)}`);
+  if (!hasKey) return fail("unavailable");
 
   await expireStaleJobs();
   if (!(await generationsEnabled())) return fail("disabled");
