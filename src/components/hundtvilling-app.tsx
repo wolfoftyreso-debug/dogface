@@ -12,7 +12,7 @@ import {
   saveDraft,
   saveHistoryItem,
 } from "@/lib/history";
-import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
+import { PhotoError, PHOTO_ACCEPT, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
 import { savePhoto } from "@/lib/save-photo";
 import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
@@ -567,7 +567,7 @@ export function HundtvillingApp() {
       <input
         ref={cameraRef}
         type="file"
-        accept="image/*"
+        accept={PHOTO_ACCEPT}
         capture="environment"
         className="sr-only"
         onChange={onInputChange}
@@ -576,7 +576,7 @@ export function HundtvillingApp() {
       <input
         ref={libraryRef}
         type="file"
-        accept="image/*"
+        accept={PHOTO_ACCEPT}
         className="sr-only"
         onChange={onInputChange}
         aria-label="Välj bild"
