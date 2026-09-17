@@ -17,6 +17,10 @@ export class PhotoError extends Error {
 
 const ALLOWED_TYPE = /^image\/(jpeg|jpg|pjpeg|png|webp|gif|bmp|heic|heif)$/i;
 
+/** Concrete types only — `image/*` makes iPhone offer “Välj fil”. */
+export const PHOTO_ACCEPT =
+  "image/jpeg,image/png,image/heic,image/heif,image/webp,.jpg,.jpeg,.png,.heic,.heif,.webp";
+
 export function isAllowedPhotoType(type: string): boolean {
   if (!type) return true;
   return ALLOWED_TYPE.test(type) || type === "image/*";
