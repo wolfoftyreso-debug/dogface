@@ -99,7 +99,12 @@ export async function startCheckout() {
   if (!paymentsReady()) {
     return { ok: false as const, code: "payment_unavailable" as const, message: ERROR_MESSAGES.payment_unavailable };
   }
-  const visitor = await ensureVisitor();
+  let visitorId: string;
+  try {
+    visitorId = dbConfigured() ? (await ensureVisitor()).id : cookieVisitor().id;
+  } catch {
+    visitorId = cookieVisitor().id;
+  }
   const priceId = process.env.STRIPE_PRICE_ID?.trim();
   const success = `${appBaseUrl()}/?checkout={CHECKOUT_SESSION_ID}`;
   const cancel = `${appBaseUrl()}/`;
@@ -107,8 +112,8 @@ export async function startCheckout() {
     mode: "payment",
     success_url: success,
     cancel_url: cancel,
-    client_reference_id: visitor.id,
-    "metadata[visitorId]": visitor.id,
+    client_reference_id: visitorId,
+    "metadata[visitorId]": visitorId,
     "metadata[product]": "5-dog-images",
     "line_items[0][quantity]": "1",
   };
@@ -120,7 +125,7 @@ export async function startCheckout() {
     fields["line_items[0][price_data][product_data][name]"] = "5 hundbilder";
   }
   try {
-    const session = await stripeForm("checkout/sessions", fields, `co_${visitor.id}_${Date.now()}`);
+    const session = await stripeForm("checkout/sessions", fields, `co_${visitorId}_${Date.now()}`);
     const url = typeof session.url === "string" ? session.url : "";
     if (!url) {
       return { ok: false as const, code: "payment_unavailable" as const, message: ERROR_MESSAGES.payment_unavailable };

@@ -28,6 +28,7 @@ import {
 } from "./session.server";
 import { env } from "./env.server.ts";
 import { packPortraits, toClientPortraits, unpackPortraits } from "./result-pack";
+import { paymentsReady } from "./stripe.server.ts";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult, type PortraitStyle } from "./types";
 
 function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
@@ -150,7 +151,7 @@ export async function runDogTwin(
 
   if (await hasActiveJob(visitor.id)) return fail("busy", remainingOf(visitor));
 
-  const kind = await reserveCredit(visitor.id);
+  const kind = (await reserveCredit(visitor.id)) ?? (paymentsReady() ? null : "open");
   if (!kind) return fail("payment_required", 0);
 
   try {
@@ -201,7 +202,7 @@ async function finishDbJob(
   image: string,
   style: PortraitStyle,
   visitorId: string,
-  kind: "free" | "paid",
+  kind: "free" | "paid" | "open",
 ): Promise<GenerateResult> {
   try {
     const { analyzePhoto, producePortraits, AppError } = await import("./xai.server.ts");
@@ -269,12 +270,20 @@ async function runWithoutDb(
   style: PortraitStyle,
 ): Promise<GenerateResult> {
   const visitor = cookieVisitor();
-  if (remainingOf(visitor) <= 0) return fail("payment_required", 0);
-
-  const kind: "free" | "paid" = visitor.freeRemaining > 0 ? "free" : "paid";
-  if (kind === "free") visitor.freeRemaining = 0;
-  else visitor.paidRemaining = Math.max(0, visitor.paidRemaining - 1);
-  writeCookieVisitor(visitor);
+  let kind: "free" | "paid" | "open";
+  if (visitor.freeRemaining > 0) {
+    kind = "free";
+    visitor.freeRemaining = 0;
+    writeCookieVisitor(visitor);
+  } else if (visitor.paidRemaining > 0) {
+    kind = "paid";
+    visitor.paidRemaining = Math.max(0, visitor.paidRemaining - 1);
+    writeCookieVisitor(visitor);
+  } else if (!paymentsReady()) {
+    kind = "open";
+  } else {
+    return fail("payment_required", 0);
+  }
 
   memJobs().set(requestId, {
     id: requestId,
@@ -304,9 +313,10 @@ async function finishMemJob(
   image: string,
   style: PortraitStyle,
   visitor: Visitor,
-  kind: "free" | "paid",
+  kind: "free" | "paid" | "open",
 ): Promise<GenerateResult> {
   const refund = () => {
+    if (kind === "open") return;
     if (kind === "free") visitor.freeRemaining = 1;
     else visitor.paidRemaining += 1;
     writeCookieVisitor(visitor);

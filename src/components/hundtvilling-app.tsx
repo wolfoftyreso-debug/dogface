@@ -108,9 +108,10 @@ export function HundtvillingApp() {
   }, [history, preview, working, latest, error]);
 
   const canGenerate = Boolean(preview) && !working;
-  const primaryLabel = remaining === 0 ? "Köp 2,99 USD" : "Skapa";
+  const needsPay = remaining === 0 && paymentsReady;
+  const primaryLabel = needsPay ? "Köp 2,99 USD" : "Skapa";
   const remainingLabel =
-    remaining === null ? "" : remaining === 0 ? "0" : String(remaining);
+    remaining === null || !paymentsReady ? "" : remaining === 0 ? "0" : String(remaining);
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -253,11 +254,7 @@ export function HundtvillingApp() {
       setError(ERROR_MESSAGES.unavailable);
       return;
     }
-    if (remaining === 0) {
-      if (!paymentsReady) {
-        setError(ERROR_MESSAGES.payment_unavailable);
-        return;
-      }
+    if (remaining === 0 && paymentsReady) {
       await startCheckout();
       return;
     }
@@ -488,7 +485,7 @@ export function HundtvillingApp() {
             Bild
           </Button>
         </div>
-        <Button className="mt-3" onClick={() => void onPrimary()} disabled={working || (remaining !== 0 && !canGenerate)}>
+        <Button className="mt-3" onClick={() => void onPrimary()} disabled={working || (!needsPay && !canGenerate)}>
           {primaryLabel}
         </Button>
       </div>

@@ -2,7 +2,7 @@ import { getSql, withTransaction } from "./db";
 import { hashRestoreCode, randomId, restoreCodeForVisitor } from "./crypto";
 import { remainingOf, type Visitor } from "./session.server";
 
-export type ReservedKind = "free" | "paid";
+export type ReservedKind = "free" | "paid" | "open";
 
 export async function checkRateLimit(key: string, max = 12, windowMinutes = 15): Promise<boolean> {
   const sql = await getSql();
@@ -72,6 +72,7 @@ export async function reserveCredit(visitorId: string): Promise<ReservedKind | n
 }
 
 export async function releaseCredit(visitorId: string, kind: ReservedKind): Promise<void> {
+  if (kind === "open") return;
   const sql = await getSql();
   if (kind === "free") {
     await sql`
