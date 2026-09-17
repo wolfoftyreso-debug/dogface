@@ -9,9 +9,9 @@ const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
 };
 
 export const SHARE_SAVED_HINT: Record<Exclude<StoryTarget, "system">, string> = {
-  instagram: "The photo is ready. In Instagram, add it from Recents.",
-  snapchat: "The photo is ready. In Snapchat, add it from Recents.",
-  facebook: "The photo is ready. In Facebook, add it from Recents.",
+  instagram: "Instagram is opening. Paste the photo into the story.",
+  snapchat: "Snapchat is opening. Paste the photo into the story.",
+  facebook: "Facebook is opening. Paste the photo into the story.",
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -112,12 +112,34 @@ function triggerDownload(file: File) {
   window.setTimeout(() => URL.revokeObjectURL(url), 2_000);
 }
 
+async function blobAsPng(blob: Blob): Promise<Blob> {
+  if (blob.type === "image/png") return blob;
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return blob;
+  ctx.drawImage(bitmap, 0, 0);
+  const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  return png ?? blob;
+}
+
 async function copyImage(blob: Blob): Promise<void> {
   if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) return;
+  const png = await blobAsPng(blob);
   try {
-    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "image/png": Promise.resolve(png),
+      }),
+    ]);
   } catch {
-    // Safari can reject jpeg clipboard writes.
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    } catch {
+      // Safari can still reject clipboard writes without a direct tap.
+    }
   }
 }
 
@@ -145,6 +167,10 @@ async function nativeShare(file: File, title: string, text: string): Promise<"sh
   return "saved";
 }
 
+function openApp(target: Exclude<StoryTarget, "system">) {
+  window.location.href = APP_SCHEME[target];
+}
+
 export async function shareStory(opts: {
   imageDataUrl: string;
   breed: string;
@@ -158,13 +184,11 @@ export async function shareStory(opts: {
   const title = "Look how alike I got";
   const text = `Half me, half ${opts.breed}.`;
 
-  const result = await nativeShare(file, title, text);
-  if (result !== "saved") return result;
-
-  void copyImage(blob);
-  if (opts.target !== "system") {
-    if (!isAppleTouch()) triggerDownload(file);
-    window.location.href = APP_SCHEME[opts.target];
+  if (opts.target === "system" || !isAppleTouch()) {
+    return nativeShare(file, title, text);
   }
+
+  await copyImage(blob);
+  openApp(opts.target);
   return "saved";
 }
