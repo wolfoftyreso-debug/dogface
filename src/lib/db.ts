@@ -9,7 +9,9 @@ function databaseUrl(): string | undefined {
 }
 
 export function dbConfigured(): boolean {
-  return Boolean(databaseUrl());
+  if (databaseUrl()) return true;
+  // Preview (not Vercel) has PGLite. Only Vercel without DATABASE_URL lacks a DB.
+  return !runningOnVercel();
 }
 
 function runningOnVercel(): boolean {

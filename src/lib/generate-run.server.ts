@@ -23,6 +23,7 @@ import {
   getVisitorById,
   remainingOf,
   writeCookieVisitor,
+  type Visitor,
 } from "./session.server";
 import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult, type PortraitStyle } from "./types";
@@ -33,6 +34,31 @@ function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
 
 function isRequestId(value: string): boolean {
   return /^[0-9a-f-]{16,64}$/i.test(value);
+}
+
+function onVercel(): boolean {
+  return Boolean(process.env["VERCEL"]);
+}
+
+type MemJob = {
+  id: string;
+  visitorId: string;
+  status: "analyzing" | "generating" | "ready" | "rejected" | "failed";
+  breed: string;
+  reason: string;
+  imageDataUrl: string;
+  errorCode: GenerateErrorCode | "";
+  remaining: number;
+};
+
+const memRef = globalThis as typeof globalThis & { __htJobs__?: Map<string, MemJob> };
+function memJobs(): Map<string, MemJob> {
+  memRef.__htJobs__ ??= new Map();
+  return memRef.__htJobs__;
+}
+
+function pending(id: string, remaining: number): GenerateResult {
+  return { ok: true, id, status: "analyzing", remaining };
 }
 
 export async function runDogTwin(
@@ -112,26 +138,43 @@ export async function runDogTwin(
     return fail("busy", remainingOf(visitor));
   }
 
+  await setJobStatus(requestId, "analyzing");
+  const work = finishDbJob(requestId, image, style, visitor.id, kind);
+  if (!onVercel()) {
+    void work.catch((err) => {
+      console.info("[hundtvilling] background job", err instanceof Error ? err.message : "error");
+    });
+    return pending(requestId, remainingOf(visitor));
+  }
+  return work;
+}
+
+async function finishDbJob(
+  requestId: string,
+  image: string,
+  style: PortraitStyle,
+  visitorId: string,
+  kind: "free" | "paid",
+): Promise<GenerateResult> {
   try {
-    await setJobStatus(requestId, "analyzing");
-    const { analyzePhoto, produceIdentityDog } = await import("./xai.server.ts");
+    const { analyzePhoto, produceIdentityDog, AppError } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "no_human" });
-      if (moved) await releaseCredit(visitor.id, kind);
-      const latest = await getVisitorById(visitor.id);
+      if (moved) await releaseCredit(visitorId, kind);
+      const latest = await getVisitorById(visitorId);
       return fail("no_human", latest ? remainingOf(latest) : 1);
     }
     if (analysis.subjectSelection === "ambiguous") {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "ambiguous" });
-      if (moved) await releaseCredit(visitor.id, kind);
-      const latest = await getVisitorById(visitor.id);
+      if (moved) await releaseCredit(visitorId, kind);
+      const latest = await getVisitorById(visitorId);
       return fail("ambiguous", latest ? remainingOf(latest) : undefined);
     }
     if (!analysis.breedId && !analysis.breedName) {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "failed" });
-      if (moved) await releaseCredit(visitor.id, kind);
-      const latest = await getVisitorById(visitor.id);
+      if (moved) await releaseCredit(visitorId, kind);
+      const latest = await getVisitorById(visitorId);
       return fail("failed", latest ? remainingOf(latest) : undefined);
     }
 
@@ -147,11 +190,10 @@ export async function runDogTwin(
       reason: analysis.reason,
       resultData: imageDataUrl,
     });
-    if (!marked) {
-      return fail("timeout");
-    }
+    if (!marked) return fail("timeout");
     await bumpGenerationCounter();
-    const latest = await getVisitorById(visitor.id);
+    const latest = await getVisitorById(visitorId);
+    console.info(`[hundtvilling] ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
     return {
       ok: true,
       id: requestId,
@@ -164,9 +206,10 @@ export async function runDogTwin(
   } catch (err) {
     const { AppError } = await import("./xai.server.ts");
     const code = err instanceof AppError ? err.code : "failed";
-    const current = await getJob(requestId, visitor.id);
+    console.info(`[hundtvilling] job fail ${requestId.slice(0, 8)} ${code} ${err instanceof Error ? err.message : ""}`);
+    const current = await getJob(requestId, visitorId);
     if (current?.status === "ready" && current.resultData) {
-      const latest = await getVisitorById(visitor.id);
+      const latest = await getVisitorById(visitorId);
       return {
         ok: true,
         id: requestId,
@@ -178,7 +221,7 @@ export async function runDogTwin(
       };
     }
     const moved = await setJobStatus(requestId, "failed", { errorCode: code });
-    if (moved) await releaseCredit(visitor.id, kind);
+    if (moved) await releaseCredit(visitorId, kind);
     return fail(code);
   }
 }
@@ -196,28 +239,86 @@ async function runWithoutDb(
   else visitor.paidRemaining = Math.max(0, visitor.paidRemaining - 1);
   writeCookieVisitor(visitor);
 
+  memJobs().set(requestId, {
+    id: requestId,
+    visitorId: visitor.id,
+    status: "analyzing",
+    breed: "",
+    reason: "",
+    imageDataUrl: "",
+    errorCode: "",
+    remaining: remainingOf(visitor),
+  });
+
+  const work = finishMemJob(requestId, image, style, visitor, kind);
+  if (!onVercel()) {
+    void work.catch((err) => {
+      console.info("[hundtvilling] mem job", err instanceof Error ? err.message : "error");
+    });
+    return pending(requestId, remainingOf(visitor));
+  }
+  return work;
+}
+
+async function finishMemJob(
+  requestId: string,
+  image: string,
+  style: PortraitStyle,
+  visitor: Visitor,
+  kind: "free" | "paid",
+): Promise<GenerateResult> {
+  const refund = () => {
+    if (kind === "free") visitor.freeRemaining = 1;
+    else visitor.paidRemaining += 1;
+    writeCookieVisitor(visitor);
+  };
   try {
     const { analyzePhoto, produceIdentityDog, AppError } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
-      if (kind === "free") visitor.freeRemaining = 1;
-      else visitor.paidRemaining += 1;
-      writeCookieVisitor(visitor);
+      refund();
+      memJobs().set(requestId, {
+        ...memJobs().get(requestId)!,
+        status: "rejected",
+        errorCode: "no_human",
+        remaining: remainingOf(visitor),
+      });
       return fail("no_human", remainingOf(visitor));
     }
     if (analysis.subjectSelection === "ambiguous") {
-      if (kind === "free") visitor.freeRemaining = 1;
-      else visitor.paidRemaining += 1;
-      writeCookieVisitor(visitor);
+      refund();
+      memJobs().set(requestId, {
+        ...memJobs().get(requestId)!,
+        status: "rejected",
+        errorCode: "ambiguous",
+        remaining: remainingOf(visitor),
+      });
       return fail("ambiguous", remainingOf(visitor));
     }
     if (!analysis.breedId && !analysis.breedName) {
-      if (kind === "free") visitor.freeRemaining = 1;
-      else visitor.paidRemaining += 1;
-      writeCookieVisitor(visitor);
+      refund();
+      memJobs().set(requestId, {
+        ...memJobs().get(requestId)!,
+        status: "rejected",
+        errorCode: "failed",
+        remaining: remainingOf(visitor),
+      });
       return fail("failed", remainingOf(visitor));
     }
+    const current = memJobs().get(requestId);
+    if (current) current.status = "generating";
     const imageDataUrl = await produceIdentityDog(image, analysis, style);
+    memJobs().set(requestId, {
+      id: requestId,
+      visitorId: visitor.id,
+      status: "ready",
+      breed: analysis.breedName,
+      reason: analysis.reason,
+      imageDataUrl,
+      errorCode: "",
+      remaining: remainingOf(visitor),
+    });
+    console.info(`[hundtvilling] mem ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
     return {
       ok: true,
       id: requestId,
@@ -229,20 +330,48 @@ async function runWithoutDb(
     };
   } catch (err) {
     const { AppError } = await import("./xai.server.ts");
-    if (kind === "free") visitor.freeRemaining = 1;
-    else visitor.paidRemaining += 1;
-    writeCookieVisitor(visitor);
+    refund();
     const code = err instanceof AppError ? err.code : "failed";
+    console.info(`[hundtvilling] mem fail ${requestId.slice(0, 8)} ${code}`);
+    memJobs().set(requestId, {
+      id: requestId,
+      visitorId: visitor.id,
+      status: "failed",
+      breed: "",
+      reason: "",
+      imageDataUrl: "",
+      errorCode: code,
+      remaining: remainingOf(visitor),
+    });
     return fail(code, remainingOf(visitor));
   }
 }
 
 export async function readGeneration(id: string): Promise<GenerateResult> {
   if (!isRequestId(id)) return fail("failed");
-  if (!dbConfigured()) return fail("failed");
+  const mem = memJobs().get(id);
+  if (mem) {
+    if (mem.status === "ready") {
+      return {
+        ok: true,
+        id: mem.id,
+        status: "ready",
+        breed: mem.breed,
+        reason: mem.reason,
+        imageDataUrl: mem.imageDataUrl,
+        remaining: mem.remaining,
+      };
+    }
+    if (mem.status === "rejected" || mem.status === "failed") {
+      return fail((mem.errorCode as GenerateErrorCode) || "failed", mem.remaining);
+    }
+    return { ok: true, id: mem.id, status: mem.status, remaining: mem.remaining };
+  }
+  if (!dbConfigured()) return { ok: true, id, status: "analyzing", remaining: remainingOf(cookieVisitor()) };
+
   const visitor = await ensureVisitor();
   const job = await getJob(id, visitor.id);
-  if (!job) return fail("failed", remainingOf(visitor));
+  if (!job) return { ok: true, id, status: "analyzing", remaining: remainingOf(visitor) };
   if (job.status === "ready" || job.status === "delivered") {
     if (!job.resultData) return fail("failed", remainingOf(visitor));
     if (job.status === "ready") await markDelivered(id, visitor.id);

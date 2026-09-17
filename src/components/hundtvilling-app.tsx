@@ -24,31 +24,6 @@ function hasLiveCamera(): boolean {
   return typeof navigator.mediaDevices?.getUserMedia === "function";
 }
 
-function waitWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    let done = false;
-    const timer = window.setTimeout(() => {
-      if (done) return;
-      done = true;
-      reject(new Error("timeout"));
-    }, ms);
-    promise.then(
-      (value) => {
-        if (done) return;
-        done = true;
-        window.clearTimeout(timer);
-        resolve(value);
-      },
-      (err) => {
-        if (done) return;
-        done = true;
-        window.clearTimeout(timer);
-        reject(err);
-      },
-    );
-  });
-}
-
 export function HundtvillingApp() {
   const search = useSearch({ from: "/" });
   const navigate = useNavigate({ from: "/" });
@@ -189,21 +164,13 @@ export function HundtvillingApp() {
     const requestId = crypto.randomUUID();
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 8000);
     try {
-      const generatePromise = generateDogTwin({ data: { image, requestId, style } });
-      const poll = (async () => {
-        for (let i = 0; i < 42; i += 1) {
-          await new Promise((resolve) => window.setTimeout(resolve, 5000));
-          const job = await getGeneration({ data: { id: requestId } });
-          if (job.ok && job.status === "ready") return job;
-          if (!job.ok && job.code !== "failed") return job;
-        }
-        return null;
-      })();
-      const raced = await Promise.race([
-        waitWithTimeout(generatePromise, GENERATE_WAIT_MS),
-        poll.then((value) => value ?? waitWithTimeout(generatePromise, GENERATE_WAIT_MS)),
-      ]);
-      const response = raced;
+      const started = await generateDogTwin({ data: { image, requestId, style } });
+      let response = started;
+      if (response.ok && response.status !== "ready") {
+        response = await pollUntilReady(requestId);
+      } else if (!response.ok && response.code === "failed") {
+        response = await pollUntilReady(requestId);
+      }
       if (!response || !response.ok) {
         if (response && !response.ok) {
           setError(response.message);
@@ -242,6 +209,18 @@ export function HundtvillingApp() {
       inFlight.current = false;
       setWorking(false);
     }
+  }
+
+  async function pollUntilReady(requestId: string) {
+    const deadline = Date.now() + GENERATE_WAIT_MS;
+    let last: Awaited<ReturnType<typeof getGeneration>> | null = null;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      last = await getGeneration({ data: { id: requestId } });
+      if (last.ok && last.status === "ready") return last;
+      if (!last.ok && last.code !== "failed") return last;
+    }
+    return last ?? { ok: false as const, code: "timeout" as const, message: ERROR_MESSAGES.timeout };
   }
 
   async function onPrimary() {

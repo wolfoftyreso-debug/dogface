@@ -117,7 +117,7 @@ async function dataUrlFromImagePayload(payload: ImagePayload): Promise<string> {
   const first = payload.data?.[0];
   if (!first) throw new AppError("failed");
   if (first.b64_json) {
-    if (first.b64_json.length > 2_000_000) throw new AppError("failed");
+    if (first.b64_json.length > 3_500_000) throw new AppError("failed");
     return `data:image/jpeg;base64,${first.b64_json}`;
   }
   if (!first.url) throw new AppError("failed");
@@ -155,8 +155,8 @@ export async function generateDogImage(
     prompt,
     n: 1,
     aspect_ratio: "1:1",
-    resolution: "2k",
-    response_format: "b64_json",
+    resolution: "1k",
+    response_format: "url",
     image: { url: imageDataUrl, type: "image_url" },
   };
   const res = await xaiFetch("/images/edits", body, IMAGE_TIMEOUT_MS);
