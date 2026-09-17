@@ -1,9 +1,15 @@
 export type StoryTarget = "instagram" | "snapchat" | "facebook" | "system";
 
+const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
+  instagram: "instagram://story-camera",
+  snapchat: "snapchat://",
+  facebook: "facebook://stories",
+};
+
 export const SHARE_SAVED_HINT: Record<Exclude<StoryTarget, "system">, string> = {
-  instagram: "Tap Instagram in the list — the photo is attached.",
-  snapchat: "Tap Snapchat in the list — the photo is attached.",
-  facebook: "Tap Facebook in the list — the photo is attached.",
+  instagram: "Instagram is opening. Save the photo first if you want it in the story.",
+  snapchat: "Snapchat is opening. Save the photo first if you want it in the story.",
+  facebook: "Facebook is opening. Save the photo first if you want it in the story.",
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -103,6 +109,40 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
 
 export function prefetchStoryCard(imageDataUrl: string, breed: string): void {
   void composeStoryCard(imageDataUrl, breed);
+}
+
+export function openStoryApp(target: Exclude<StoryTarget, "system">): void {
+  window.location.href = APP_SCHEME[target];
+}
+
+async function copyImage(blob: Blob): Promise<void> {
+  if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) return;
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "image/png": composePng(blob),
+      }),
+    ]);
+  } catch {
+    // Clipboard is best-effort; opening the app must not wait on it.
+  }
+}
+
+async function composePng(blob: Blob): Promise<Blob> {
+  if (blob.type === "image/png") return blob;
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return blob;
+  ctx.drawImage(bitmap, 0, 0);
+  const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  return png ?? blob;
+}
+
+export function copyStoryImage(imageDataUrl: string, breed: string): void {
+  void composeStoryCard(imageDataUrl, breed).then((blob) => copyImage(blob));
 }
 
 function triggerDownload(file: File) {

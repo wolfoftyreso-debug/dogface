@@ -1,7 +1,15 @@
 import { useEffect } from "react";
 import { Facebook, Instagram, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { prefetchStoryCard, shareStory, SHARE_SAVED_HINT, type StoryTarget } from "@/lib/share-story";
+import {
+  copyStoryImage,
+  openStoryApp,
+  prefetchStoryCard,
+  shareStory,
+  SHARE_SAVED_HINT,
+  type StoryTarget,
+} from "@/lib/share-story";
+import { isAppleTouch } from "@/lib/save-photo";
 import { filenameForBreed } from "@/lib/history";
 import type { HistoryItem } from "@/lib/types";
 
@@ -39,6 +47,21 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
     }
   }
 
+  function openApp(target: Exclude<StoryTarget, "system">) {
+    copyStoryImage(item.imageDataUrl, item.breed);
+    openStoryApp(target);
+    onHint(SHARE_SAVED_HINT[target]);
+    onClose();
+  }
+
+  function onApp(target: Exclude<StoryTarget, "system">) {
+    if (isAppleTouch()) {
+      openApp(target);
+      return;
+    }
+    void post(target);
+  }
+
   return (
     <div className="share-sheet" role="dialog" aria-label="Share to story" aria-modal="true">
       <button type="button" className="share-dismiss" aria-label="Close" onClick={onClose} />
@@ -46,7 +69,6 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl tracking-tight">Share</h2>
-            <p className="mt-1 text-sm text-muted">The photo is attached. Tap Instagram in the next menu, then Story.</p>
           </div>
           <button
             type="button"
@@ -58,15 +80,15 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
           </button>
         </div>
         <div className="share-grid">
-          <Button variant="secondary" onClick={() => void post("instagram")}>
+          <Button variant="secondary" onClick={() => onApp("instagram")}>
             <Instagram className="size-4" strokeWidth={1.75} />
             Instagram
           </Button>
-          <Button variant="secondary" onClick={() => void post("snapchat")}>
+          <Button variant="secondary" onClick={() => onApp("snapchat")}>
             <MessageCircle className="size-4" strokeWidth={1.75} />
             Snapchat
           </Button>
-          <Button variant="secondary" onClick={() => void post("facebook")}>
+          <Button variant="secondary" onClick={() => onApp("facebook")}>
             <Facebook className="size-4" strokeWidth={1.75} />
             Facebook
           </Button>
