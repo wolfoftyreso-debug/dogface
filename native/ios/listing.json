@@ -69,11 +69,11 @@
   },
   "screenshots": {
     "iphone69": [
-      "native/ios/screenshots/01-home-1320x2868.jpg",
-      "native/ios/screenshots/02-photo-1320x2868.jpg",
-      "native/ios/screenshots/03-fetch-1320x2868.jpg",
-      "native/ios/screenshots/04-result-1320x2868.jpg",
-      "native/ios/screenshots/05-restore-1320x2868.jpg"
+      "native/ios/asc/01-home-1320x2868.jpg",
+      "native/ios/asc/02-photo-1320x2868.jpg",
+      "native/ios/asc/03-fetch-1320x2868.jpg",
+      "native/ios/asc/04-result-1320x2868.jpg",
+      "native/ios/asc/05-restore-1320x2868.jpg"
     ],
     "spec": "1320x2868 JPEG, sRGB, no alpha. Apple scales to smaller iPhone sizes."
   },
