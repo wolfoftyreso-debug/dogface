@@ -68,13 +68,6 @@ export function HundtvillingApp() {
     void listHistory()
       .then((items) => {
         setHistory(items);
-        if (latestRef.current) return;
-        const first = items[0];
-        if (first) {
-          latestRef.current = first;
-          setLatest(first);
-          setStyle(first.splitDataUrl ? "split" : "dog");
-        }
       })
       .catch(() => undefined);
     void getBalance()
@@ -127,7 +120,7 @@ export function HundtvillingApp() {
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "smooth" });
-  }, [history, preview, working, latest, error]);
+  }, [preview, working, latest, error]);
 
   const canGenerate = Boolean(preview) && !working;
   const needsPay = remaining === 0 && paymentsReady;
@@ -410,7 +403,7 @@ export function HundtvillingApp() {
       </header>
 
       <div ref={scrollerRef} className="mt-3 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-2">
-        {shown.length === 0 && !preview && !working ? (
+        {!latest && !preview && !working ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <div className="min-h-0 flex-1 overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
               <div className="photo-hero is-fill">
