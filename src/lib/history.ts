@@ -33,14 +33,18 @@ export function isHistoryItem(value: unknown): value is HistoryItem {
 const DB_NAME = "hundtvilling";
 const STORE = "twins";
 const DRAFT = "draft";
-const VERSION = 2;
+const VERSION = 3;
 const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, VERSION);
-    req.onupgradeneeded = () => {
+    req.onupgradeneeded = (event) => {
       const db = req.result;
+      const oldVersion = event.oldVersion;
+      if (oldVersion < 3 && db.objectStoreNames.contains(STORE)) {
+        db.deleteObjectStore(STORE);
+      }
       if (!db.objectStoreNames.contains(STORE)) {
         const store = db.createObjectStore(STORE, { keyPath: "id" });
         store.createIndex("createdAt", "createdAt");

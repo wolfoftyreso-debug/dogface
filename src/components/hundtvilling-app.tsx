@@ -31,6 +31,7 @@ export function HundtvillingApp() {
   const libraryRef = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const latestRef = useRef<HistoryItem | null>(null);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
@@ -55,8 +56,10 @@ export function HundtvillingApp() {
     void listHistory()
       .then((items) => {
         setHistory(items);
+        if (latestRef.current) return;
         const first = items[0];
         if (first) {
+          latestRef.current = first;
           setLatest(first);
           setStyle(first.splitDataUrl ? "split" : "dog");
         }
@@ -206,6 +209,7 @@ export function HundtvillingApp() {
         dogDataUrl: response.dogDataUrl,
       };
       setLatest(item);
+      latestRef.current = item;
       setStyle(response.splitDataUrl ? "split" : "dog");
       setRemaining(response.remaining);
       setFreeRemaining(0);
