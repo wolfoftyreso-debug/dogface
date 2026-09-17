@@ -20,7 +20,9 @@ export function isHistoryItem(value: unknown): value is HistoryItem {
     typeof item.breed === "string" &&
     typeof item.reason === "string" &&
     typeof item.imageDataUrl === "string" &&
-    item.imageDataUrl.startsWith("data:image/")
+    item.imageDataUrl.startsWith("data:image/") &&
+    (item.sourceDataUrl === undefined ||
+      (typeof item.sourceDataUrl === "string" && item.sourceDataUrl.startsWith("data:image/")))
   );
 }
 

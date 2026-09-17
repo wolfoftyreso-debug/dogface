@@ -44,6 +44,10 @@ export function extractJsonObject(text: string): unknown {
   }
 }
 
+function numbered(items: string[]): string {
+  return items.map((item, index) => `${index + 1}. ${item}`).join(" ");
+}
+
 function clipAnchors(values: string[] | undefined): string[] {
   return (values ?? [])
     .map((value) => clipText(value, 140))
@@ -82,64 +86,62 @@ export function parseAnalysis(raw: unknown): AnalysisResult | null {
   };
 }
 
-function numbered(items: string[]): string {
-  return items.map((item, index) => `${index + 1}. ${item}`).join(" ");
-}
-
-export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", style: PortraitStyle = "split"): string {
+export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", style: PortraitStyle = "dog"): string {
   const anchors = analysis.identityAnchors;
-  const split = style !== "dog";
+  const split = style === "split";
   const composition = split
     ? [
-        `Edit this photograph into a photorealistic VERTICAL SPLIT PORTRAIT: left half is still this exact person, right half is a real ${analysis.breedName} (${analysis.breedId}) photographed in the same frame.`,
-        "ONE head, one camera, one photograph. Split on the exact vertical midline.",
-        "LEFT HALF: keep this person's real human face — real skin pores, real eye, brow, hair, ear. Do not beautify, cartoon, or replace the human half.",
-        `RIGHT HALF: a REAL living ${analysis.breedName} as photographed by a camera — true canine skull, leather nose, whisker pads, individual fur strands, ear leather. Not a human face with fur. Not a costume. Not CGI.`,
-        "The joke is likeness through eyes, gaze, color, and furnishings — the dog half must still be a dog.",
-        "SEAMLESS JOIN: melt skin into fur across a soft 8-12 percent midline so no seam is visible. No cut, gap, or collage line. Grain, lighting, and focus stay continuous.",
-        "THIS PERSON AS THIS BREED on the dog half, using real kennel-club anatomy.",
+        `Regenerate this entire photograph as ONE new camera portrait of this person becoming a real living ${analysis.breedName} (${analysis.breedId}).`,
+        "This is a single fused morph photograph, not a collage, not a split-screen, not a paste, not two images joined.",
+        "Render the WHOLE frame from scratch. Do not keep the original left-side pixels. Do not cut on a vertical midline.",
+        `The subject stays in this pose, crop, clothing, and lighting. Appearance flows continuously from this person on the left into a true ${analysis.breedName} on the right.`,
+        "The transition occupies the central third of the face: skin becomes fur fiber by fiber, the nose becomes canine leather, the ear becomes ear leather. No straight cut, no hard edge, no mismatched lighting.",
+        "Left side still reads as this person. Right side is a real dog with muzzle, nose leather, whisker pads, and ear leather. Center is one skull under one light.",
+        "THIS PERSON AS THIS BREED. The joke is likeness through eyes, gaze, color, and furnishings.",
       ]
     : [
-        `Edit this photograph into a photorealistic camera portrait of a real living ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
-        "Full canine anatomy: muzzle, nose leather, whisker pads, ear leather, coat. Not a hybrid, not a costume, not a split face, not anthropomorphic, not a human skull with fur.",
-        "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, furnishings, and color — the body is a real dog.",
+        `Regenerate this entire photograph as a photorealistic camera portrait of a real living ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
+        "THE WHOLE SUBJECT IS A DOG. Full canine head, muzzle, nose leather, whisker pads, ear leather, neck, and coat. The person has become the dog — not a filter, not a costume, not a split face, not a human skull with fur, not a dog head pasted on a human.",
+        "Replace every human facial feature. Zero human skin, zero human nose, zero human mouth, zero human ears in the output.",
+        "Keep this exact crop, head scale, camera angle, clothing silhouette (the dog wears the same clothes), background, and lighting.",
+        "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, expression, furnishings, and color — the body is a real dog.",
       ];
   return [
     ...composition,
-    "CAMERA REALISM: 85mm portrait, natural light matching the source, real photographic grain, catchlights, subsurface skin, wet nose, separate fur fibers. Looks like a phone photo, not a 3D render.",
+    "CAMERA REALISM: 85mm portrait, natural light matching the source, real photographic grain, catchlights, wet nose, separate fur fibers. Looks like a phone photo, not a 3D render.",
     "HARD MICRO-SYNC — copy from the source photo, do not invent or average:",
     "1 IRIS: identical hue, saturation, spokes, limbal ring, and catchlight on BOTH eyes. The dog eye is this person's iris in a canine lid, not a generic brown dog eye.",
     "2 EYE SPACING: keep inter-pupillary distance, eye-line height, and left/right size relationship exactly. Do not widen or cute-ify the eyes.",
     "3 EXPRESSION: transfer lid tightness, brow tension, mouth-corner direction, and micro-asymmetry. A deadpan face stays deadpan. Do not default to a panting happy dog.",
-    "4 SKIN: left half keeps exact source skin tone, undertone, local flush, and under-eye color. Do not lighten, tan, or airbrush. Warm/cool undertone continues into the dog's muzzle leather and inner ear.",
-    "5 HAIR TEXTURE: curl, wave, coil, straight, frizz, part, and fiber thickness become the dog coat. Fine stays fine. Coarse stays coarse. Do not swap in a stock breed coat that fights the hair.",
-    "6 ACCENT COLORS: map hair highlights, lip color, cheek flush, clothing-edge and jewelry hues into coat markings and furnishings so both halves share one photograph's palette.",
-    "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 iris color and catchlights, 2 eye spacing and eye relationship, 3 expression, 4 skin tone, 5 hair texture to coat, 6 accent colors, 7 gaze, 8 head pose, 9 identity anchors, 10 breed-true canine anatomy.",
-    anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog half without turning it human): ${numbered(anchors)}` : "",
-    analysis.irisColor && `Iris lock: ${analysis.irisColor} — same iris on the human eye AND the dog eye.`,
+    "4 SKIN / LEATHER: warm/cool undertone continues into the dog's muzzle leather and inner ear. Do not lighten, tan, or airbrush.",
+    "5 HAIR TEXTURE: curl, wave, coil, straight, frizz, part, volume, and fiber thickness become the dog coat. Fine stays fine. Coarse stays coarse. Voluminous hair stays voluminous. Do not swap in a stock breed coat that fights the hair.",
+    "6 ACCENT COLORS: map hair highlights, lip color, cheek flush, clothing-edge and jewelry hues into coat markings and furnishings so the portrait shares one palette.",
+    "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 iris color and catchlights, 2 eye spacing and eye relationship, 3 expression, 4 undertone, 5 hair texture to coat, 6 accent colors, 7 gaze, 8 head pose, 9 identity anchors, 10 breed-true canine anatomy.",
+    anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog without turning it human): ${numbered(anchors)}` : "",
+    analysis.irisColor && `Iris lock: ${analysis.irisColor} — same iris on the dog eyes.`,
     analysis.eyes && `Eyes: ${analysis.eyes}`,
-    analysis.eyeGeometry && `Eye geometry / spacing: ${analysis.eyeGeometry} — lock IPD and eye-line across the split.`,
+    analysis.eyeGeometry && `Eye geometry / spacing: ${analysis.eyeGeometry} — lock IPD and eye-line.`,
     analysis.gaze && `Gaze: ${analysis.gaze} — both eyes look the same direction with the same intensity.`,
     analysis.expression && `Expression lock: ${analysis.expression} — copy the micro-expression, do not smile-ify.`,
-    analysis.skinTone && `Skin lock: ${analysis.skinTone}`,
+    analysis.skinTone && `Skin / leather lock: ${analysis.skinTone}`,
     analysis.headPose && `Head pose: ${analysis.headPose} — keep yaw, pitch, roll, tilt, and camera angle.`,
     analysis.facialGeometry && `Face geometry: ${analysis.facialGeometry}`,
     analysis.hairTexture && `Hair texture lock: ${analysis.hairTexture} — this fiber becomes the coat.`,
     analysis.hairAndFurnishings &&
-      `Hair/furnishings: ${analysis.hairAndFurnishings} — ${split ? "human hair on the left, same texture translated into coat/furnishings on the right." : "translate into coat and furnishings with the same fiber."}`,
+      `Hair/furnishings: ${analysis.hairAndFurnishings} — translate into coat and furnishings with the same fiber and volume.`,
     analysis.accentColors && `Accent colors: ${analysis.accentColors}`,
     analysis.colorMap && `Color map: ${analysis.colorMap}`,
-    analysis.coat && `Coat on the dog half: ${analysis.coat}`,
+    analysis.coat && `Coat: ${analysis.coat}`,
     analysis.visibleTraits && `Visible traits: ${analysis.visibleTraits}`,
     analysis.renderBrief,
     "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction from the source photo.",
     "Do not beautify, symmetrize, smile-ify, or replace with studio hero lighting.",
     split
-      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, human nose on the dog half, visible seam, full-body dog, collage, text, watermark, logo, extra faces, costume hood."
-      : "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, human skin, split face, collage, text, watermark, logo, extra faces, costume hood.",
+      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, Photoshop composite, cut-and-paste, visible seam, vertical midline cut, two photos joined, keeping original left-half pixels, collage, text, watermark, logo, extra faces, costume hood."
+      : "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, human skin, human nose, split face, half-and-half, collage, paste, text, watermark, logo, extra faces, costume hood.",
     extra,
     split
-      ? "Square 1:1 head-and-shoulders camera portrait: left human, right real dog, fused, immediately readable as this person."
+      ? "Square 1:1 head-and-shoulders camera portrait: one fused morph of this person becoming this breed, immediately readable as the same person."
       : "Square 1:1 head-and-shoulders camera portrait of a real dog, immediately readable as this person as this breed.",
   ]
     .filter((part) => part && part.trim().length > 0)
@@ -155,20 +157,24 @@ export const ANALYSIS_SYSTEM_PROMPT = [
   "If no usable human head/face is visible, set validHuman false and subjectSelection to none.",
   "When validHuman is true, pick breedId from the provided catalog only.",
   "Breed selection is an optimization problem, not a vibe. Ask: which recognized breed provides the best anatomical substrate for THIS face — head proportion, eye placement, muzzle, furnishings, ear silhouette, coat texture. If Breed A stereotypically feels right but Breed B preserves geometry substantially better, choose Breed B. Coat color must still be a plausible translation of hair color.",
+  "HAIR SILHOUETTE IS THE PRIMARY BREED CUE. Facial hair is only furnishings, never the breed.",
+  "If hair is voluminous, rounded, afro, coils, corkscrews, or big curls, pick a curly water-dog or poodle type: portuguese-water-dog, barbet, irish-water-spaniel, lagotto-romagnolo, spanish-water-dog, poodle-standard, poodle-miniature.",
+  "NEVER pick affenpinscher, a schnauzer, or a wiry toy/terrier for big curly or coily hair. Those are small wiry faces, not a hair-volume match. A beard alone is not a reason to pick Affenpinscher.",
+  "Wiry cropped short hair plus a rectangular beard may be a schnauzer. Tight small monkey-like face with sparse wiry furnishings may be affenpinscher only when the hair is also short and wiry, never when an afro or big curls dominate the outline.",
   "IRIS: name the exact visible iris color (hue, spokes, limbal ring, catchlight). This becomes BOTH eyes. Never write generic brown dog eyes.",
   "EYE SPACING: inter-pupillary distance, eye-line height, relative size of left vs right, brow-to-eye gap. These must be copy-locked later.",
   "GAZE: direction, convergence, focus point, squint, intensity.",
   "FACIAL GEOMETRY: width-to-height, eye-line, brow, cheek, jaw, chin, long vs compact, broad vs narrow.",
   "HEAD POSE: yaw, pitch, roll, tilt, camera angle, crop. Preserve it later.",
   "EXPRESSION: lid tightness, brow tension, mouth corners, micro-asymmetry. Do not default to a happy dog. A serious closed mouth stays serious.",
-  "SKIN: visible undertone, local flush, under-eye color. Do not name ethnicity. The human half keeps this exact skin; undertone informs muzzle leather.",
+  "SKIN: visible undertone, local flush, under-eye color. Do not name ethnicity. Undertone informs muzzle leather.",
   "HAIR TEXTURE: fiber (fine/coarse), pattern (straight/wave/curl/coil/frizz), part, volume, sheen. This fiber becomes the coat — pick a breed that can wear it.",
   "ACCENT COLORS: highlights in hair, lip color, cheek flush, clothing-edge or jewelry hues that should tint coat markings.",
-  "COLOR: irisColor becomes the dog iris. Hair pigment becomes coat. Accent colors tint furnishings. Human half keeps real skin.",
+  "COLOR: irisColor becomes the dog iris. Hair pigment becomes coat. Accent colors tint furnishings.",
   "skinTone, irisColor, accentColors, hairTexture: short precise English locks. Empty only if not visible.",
   "identityAnchors: 5-10 of the person's most distinctive visible features including at least eye color, eye spacing, expression, and hair texture when visible.",
   "reason: one short clear sentence in Swedish naming the visual likeness. Max 160 characters.",
-  "renderBrief: dense English spec for a CAMERA photograph of THIS PERSON as a vertical split: left half human, right half a real dog of THIS BREED. Must name iris color, IPD, expression, skin undertone, hair texture, and accent colors.",
+  "renderBrief: dense English spec for a CAMERA photograph of THIS WHOLE PERSON as a real dog of THIS BREED — full canine anatomy, same pose and clothes. Must name iris color, IPD, expression, undertone, hair texture, and accent colors. Not a split. Not a collage.",
 ].join(" ");
 
 export function analysisUserText(): string {
@@ -177,6 +183,7 @@ export function analysisUserText(): string {
     "Pick breedId from this catalog only:",
     breedCatalogForPrompt(),
     "Choose the breed whose morphology AND coat fiber best preserve this person's visual identity.",
+    "Hair silhouette and volume beat facial hair. Do not pick Affenpinscher for an afro or big curls.",
     "Lock iris color, eye spacing, expression, skin undertone, hair texture, and accent colors as hard fields.",
     "Return 5-10 identityAnchors as the hard generation priorities.",
     "Return only the structured result.",

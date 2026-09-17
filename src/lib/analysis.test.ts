@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildGenerationPrompt, extractJsonObject, parseAnalysis } from "./analysis.ts";
+import { buildGenerationPrompt, extractJsonObject, parseAnalysis, ANALYSIS_SYSTEM_PROMPT } from "./analysis.ts";
 import { findBreed } from "./breeds.ts";
 import { nextHistory } from "./history.ts";
 import {
@@ -150,46 +150,52 @@ describe("breed catalog", () => {
     assert.equal(findBreed("Schäfer")?.id, "german-shepherd");
     assert.equal(findBreed("weimaraner")?.nameSv, "Weimaraner");
   });
+
+  it("treats hair volume as the primary breed cue", () => {
+    assert.match(ANALYSIS_SYSTEM_PROMPT, /HAIR SILHOUETTE IS THE PRIMARY BREED CUE/i);
+    assert.match(ANALYSIS_SYSTEM_PROMPT, /portuguese-water-dog/i);
+    assert.match(ANALYSIS_SYSTEM_PROMPT, /NEVER pick affenpinscher/i);
+  });
 });
 
 describe("generation prompt", () => {
-  it("asks for a split portrait of this person as this breed", () => {
+  it("asks for a full dog portrait of this person as this breed", () => {
     const parsed = parseAnalysis(valid);
     assert.ok(parsed);
     const prompt = buildGenerationPrompt(parsed);
     assert.match(prompt, /THIS PERSON AS THIS BREED/i);
-    assert.match(prompt, /VERTICAL SPLIT PORTRAIT/i);
-    assert.match(prompt, /LEFT HALF/i);
-    assert.match(prompt, /RIGHT HALF/i);
+    assert.match(prompt, /WHOLE SUBJECT IS A DOG/i);
     assert.match(prompt, /HARD IDENTITY ANCHORS/i);
     assert.match(prompt, /close-set eyes/i);
     assert.match(prompt, /downward-curving moustache/i);
     assert.match(prompt, /PRIORITY ORDER/i);
     assert.match(prompt, /1 iris color/i);
-    assert.match(prompt, /SEAMLESS JOIN/i);
-    assert.match(prompt, /no seam/i);
     assert.match(prompt, /CAMERA REALISM/i);
-    assert.match(prompt, /real living|REAL living|true canine/i);
+    assert.match(prompt, /real living|REAL living/i);
     assert.match(prompt, /Not CGI|not CGI|CGI/i);
     assert.match(prompt, /HARD MICRO-SYNC/i);
     assert.match(prompt, /Iris lock/i);
     assert.match(prompt, /inter-pupillary/i);
     assert.match(prompt, /Hair texture lock/i);
-    assert.match(prompt, /Skin lock/i);
-    assert.match(prompt, /Accent colors/i);
     assert.match(prompt, /Expression lock/i);
     assert.match(prompt, /generic brown dog eyes/i);
     assert.match(prompt, /COMPOSITION LOCK/i);
-    assert.doesNotMatch(prompt, /Forbidden: human skin/);
+    assert.match(prompt, /Zero human skin/i);
+    assert.doesNotMatch(prompt, /LEFT HALF/i);
+    assert.doesNotMatch(prompt, /RIGHT HALF/i);
+    assert.doesNotMatch(prompt, /VERTICAL SPLIT PORTRAIT/i);
+    assert.doesNotMatch(prompt, /exact vertical midline/i);
     assert.doesNotMatch(prompt, /puppy-like hero lighting/i);
   });
 
-  it("can ask for a full dog instead of a split", () => {
+  it("can ask for a fused morph instead of a full dog", () => {
     const parsed = parseAnalysis(valid);
     assert.ok(parsed);
-    const prompt = buildGenerationPrompt(parsed, "", "dog");
-    assert.match(prompt, /Full canine anatomy/i);
-    assert.doesNotMatch(prompt, /VERTICAL SPLIT PORTRAIT/i);
+    const prompt = buildGenerationPrompt(parsed, "", "split");
+    assert.match(prompt, /fused morph/i);
+    assert.match(prompt, /not a collage/i);
+    assert.doesNotMatch(prompt, /exact vertical midline/i);
+    assert.doesNotMatch(prompt, /WHOLE SUBJECT IS A DOG/i);
   });
 });
 

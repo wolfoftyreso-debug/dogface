@@ -76,7 +76,7 @@ function pending(id: string, remaining: number): GenerateResult {
 export async function runDogTwin(
   image: string,
   requestId: string,
-  style: PortraitStyle = "split",
+  style: PortraitStyle = "dog",
 ): Promise<GenerateResult> {
   const payload = validateImagePayload(image);
   if (payload !== "ok") return fail(payload);
@@ -204,7 +204,7 @@ async function finishDbJob(
       breedName: analysis.breedName,
       reason: analysis.reason,
     });
-    const imageDataUrl = await produceIdentityDog(image, analysis, style);
+    const imageDataUrl = await produceIdentityDog(image, analysis, "dog");
     const marked = await setJobStatus(requestId, "ready", {
       breedId: analysis.breedId,
       breedName: analysis.breedName,
@@ -330,7 +330,7 @@ async function finishMemJob(
     }
     const current = memJobs().get(requestId);
     if (current) current.status = "generating";
-    const imageDataUrl = await produceIdentityDog(image, analysis, style);
+    const imageDataUrl = await produceIdentityDog(image, analysis, "dog");
     memJobs().set(requestId, {
       id: requestId,
       visitorId: visitor.id,

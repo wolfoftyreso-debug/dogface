@@ -1,7 +1,7 @@
 import type { PortraitStyle } from "./types.ts";
 
 export function parsePortraitStyle(value: unknown): PortraitStyle {
-  return value === "dog" ? "dog" : "split";
+  return value === "split" ? "split" : "dog";
 }
 
 export function parseGenerateInput(input: unknown): {
@@ -10,7 +10,7 @@ export function parseGenerateInput(input: unknown): {
   style: PortraitStyle;
 } {
   if (!input || typeof input !== "object") {
-    return { image: "", requestId: "", style: "split" };
+    return { image: "", requestId: "", style: "dog" };
   }
   const raw = input as { image?: unknown; requestId?: unknown; style?: unknown };
   return {

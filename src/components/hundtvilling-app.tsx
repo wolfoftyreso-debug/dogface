@@ -13,6 +13,7 @@ import {
   saveHistoryItem,
 } from "@/lib/history";
 import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
+import { blendSplitPortrait } from "@/lib/split-blend";
 import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
@@ -48,8 +49,9 @@ export function HundtvillingApp() {
   const [latest, setLatest] = useState<HistoryItem | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
-  const [style, setStyle] = useState<PortraitStyle>("split");
+  const [style, setStyle] = useState<PortraitStyle>("dog");
   const [infoOpen, setInfoOpen] = useState(false);
+  const [splitUrls, setSplitUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void listHistory().then(setHistory).catch(() => undefined);
@@ -94,6 +96,18 @@ export function HundtvillingApp() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "smooth" });
   }, [history, preview, working, latest, error]);
+
+  useEffect(() => {
+    if (!latest?.sourceDataUrl || splitUrls[latest.id]) return;
+    const id = latest.id;
+    const source = latest.sourceDataUrl;
+    const dog = latest.imageDataUrl;
+    void blendSplitPortrait(source, dog)
+      .then((url) => {
+        setSplitUrls((current) => (current[id] ? current : { ...current, [id]: url }));
+      })
+      .catch(() => undefined);
+  }, [latest, splitUrls]);
 
   const canGenerate = Boolean(preview) && !working;
   const primaryLabel = remaining === 0 ? "Köp 2,99 USD" : "Skapa";
@@ -164,7 +178,7 @@ export function HundtvillingApp() {
     const requestId = crypto.randomUUID();
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 8000);
     try {
-      const started = await generateDogTwin({ data: { image, requestId, style } });
+      const started = await generateDogTwin({ data: { image, requestId, style: "dog" } });
       let response = started;
       if (response.ok && response.status !== "ready") {
         response = await pollUntilReady(requestId);
@@ -193,8 +207,10 @@ export function HundtvillingApp() {
         breed: response.breed,
         reason: response.reason,
         imageDataUrl: response.imageDataUrl,
+        sourceDataUrl: image,
       };
       setLatest(item);
+      setStyle("dog");
       setRemaining(response.remaining);
       setFreeRemaining(0);
       setPreview(null);
@@ -247,9 +263,23 @@ export function HundtvillingApp() {
     await runGeneration(preview);
   }
 
+  async function displayedImage(item: HistoryItem): Promise<string> {
+    const isLatest = item.id === latest?.id;
+    if (!isLatest || style !== "split" || !item.sourceDataUrl) return item.imageDataUrl;
+    if (splitUrls[item.id]) return splitUrls[item.id];
+    try {
+      const url = await blendSplitPortrait(item.sourceDataUrl, item.imageDataUrl);
+      setSplitUrls((current) => ({ ...current, [item.id]: url }));
+      return url;
+    } catch {
+      return item.imageDataUrl;
+    }
+  }
+
   async function saveImage(item: HistoryItem) {
     try {
-      const res = await fetch(item.imageDataUrl);
+      const dataUrl = await displayedImage(item);
+      const res = await fetch(dataUrl);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -262,6 +292,11 @@ export function HundtvillingApp() {
     } catch {
       setShareHint("Kunde inte spara. Prova igen.");
     }
+  }
+
+  async function openShare(item: HistoryItem) {
+    const imageDataUrl = await displayedImage(item);
+    setShareItem({ ...item, imageDataUrl });
   }
 
   const shown = latest ? [latest, ...history.filter((item) => item.id !== latest.id)] : history;
@@ -294,8 +329,8 @@ export function HundtvillingApp() {
             <div className="min-h-0 flex-1 overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
               <div className="photo-hero is-fill">
                 <img
-                  src="/hero-split.jpg"
-                  alt="Exempel: hälften människa, hälften hund"
+                  src="/hero-dog.jpg"
+                  alt="Exempel: hela personen som en hund"
                   className="size-full object-cover"
                 />
               </div>
@@ -307,22 +342,56 @@ export function HundtvillingApp() {
         {shown
           .slice()
           .reverse()
-          .map((item) => (
+          .map((item) => {
+            const isLatest = item.id === (latest?.id ?? shown[0]?.id);
+            const fused = isLatest && style === "split" ? splitUrls[item.id] : undefined;
+            const showSplit = isLatest && style === "split" && Boolean(item.sourceDataUrl) && !fused;
+            const shownUrl = fused || item.imageDataUrl;
+            return (
             <article key={item.id} className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
-                <div className="photo-square">
-                  <img src={item.imageDataUrl} alt={`En ${item.breed}`} className="size-full object-contain" />
+                <div className={showSplit ? "photo-square split-morph" : "photo-square"}>
+                  {showSplit ? (
+                    <img src={item.sourceDataUrl} alt="" className="is-human" />
+                  ) : null}
+                  <img
+                    src={showSplit ? item.imageDataUrl : shownUrl}
+                    alt={`En ${item.breed}`}
+                    className={showSplit ? "is-dog size-full object-contain" : "size-full object-contain"}
+                  />
                 </div>
               </div>
               <div>
                 <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
               </div>
+              {isLatest && item.sourceDataUrl ? (
+                <div className="style-toggle" role="radiogroup" aria-label="Bildstil">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={style === "dog"}
+                    className={style === "dog" ? "is-on" : undefined}
+                    onClick={() => setStyle("dog")}
+                  >
+                    Hund
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={style === "split"}
+                    className={style === "split" ? "is-on" : undefined}
+                    onClick={() => setStyle("split")}
+                  >
+                    Split
+                  </button>
+                </div>
+              ) : null}
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="secondary" onClick={() => void saveImage(item)} aria-label="Spara bild">
                   <Download className="size-4" strokeWidth={1.75} />
                   Spara
                 </Button>
-                <Button variant="secondary" onClick={() => setShareItem(item)} aria-label="Dela till story">
+                <Button variant="secondary" onClick={() => void openShare(item)} aria-label="Dela till story">
                   <Share2 className="size-4" strokeWidth={1.75} />
                   Dela
                 </Button>
@@ -341,7 +410,8 @@ export function HundtvillingApp() {
                 </Button>
               ) : null}
             </article>
-          ))}
+            );
+          })}
 
         {preview ? (
           <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
@@ -408,28 +478,6 @@ export function HundtvillingApp() {
       </div>
 
       <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
-        {preview && !working ? (
-          <div className="style-toggle mb-3" role="radiogroup" aria-label="Bildstil">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={style === "split"}
-              className={style === "split" ? "is-on" : undefined}
-              onClick={() => setStyle("split")}
-            >
-              Split
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={style === "dog"}
-              className={style === "dog" ? "is-on" : undefined}
-              onClick={() => setStyle("dog")}
-            >
-              Hund
-            </button>
-          </div>
-        ) : null}
         <div className="grid grid-cols-2 gap-3">
           <Button variant="secondary" onClick={openCamera} aria-label="Ta foto">
             <Camera className="size-4" strokeWidth={1.75} />

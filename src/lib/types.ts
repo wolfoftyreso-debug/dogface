@@ -23,6 +23,7 @@ export type HistoryItem = {
   breed: string;
   reason: string;
   imageDataUrl: string;
+  sourceDataUrl?: string;
 };
 
 export const MAX_HISTORY = 10;

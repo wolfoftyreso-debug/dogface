@@ -147,7 +147,7 @@ async function dataUrlFromImagePayload(payload: ImagePayload): Promise<string> {
 export async function generateDogImage(
   imageDataUrl: string,
   analysis: AnalysisResult,
-  style: PortraitStyle = "split",
+  style: PortraitStyle = "dog",
 ): Promise<string> {
   const prompt = buildGenerationPrompt(analysis, "", style);
   const body = {
@@ -167,7 +167,7 @@ export async function generateDogImage(
 export async function produceIdentityDog(
   imageDataUrl: string,
   analysis: AnalysisResult,
-  style: PortraitStyle = "split",
+  style: PortraitStyle = "dog",
 ): Promise<string> {
   return generateDogImage(imageDataUrl, analysis, style);
 }
