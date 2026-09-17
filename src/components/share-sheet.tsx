@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { Facebook, Instagram, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { shareStory, SHARE_SAVED_HINT, type StoryTarget } from "@/lib/share-story";
+import { prefetchStoryCard, shareStory, SHARE_SAVED_HINT, type StoryTarget } from "@/lib/share-story";
 import { filenameForBreed } from "@/lib/history";
 import type { HistoryItem } from "@/lib/types";
 
@@ -11,6 +12,10 @@ type ShareSheetProps = {
 };
 
 export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
+  useEffect(() => {
+    prefetchStoryCard(item.imageDataUrl, item.breed);
+  }, [item.breed, item.imageDataUrl]);
+
   async function post(target: StoryTarget) {
     onHint(null);
     try {
@@ -41,10 +46,11 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl tracking-tight">Share</h2>
+            <p className="mt-1 text-sm text-muted">The photo is attached. Tap Instagram in the next menu, then Story.</p>
           </div>
           <button
             type="button"
-            className="flex size-11 items-center justify-center rounded-lg text-fg"
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-fg"
             onClick={onClose}
             aria-label="Close"
           >

@@ -1,17 +1,9 @@
-import { isAppleTouch } from "./save-photo";
-
 export type StoryTarget = "instagram" | "snapchat" | "facebook" | "system";
 
-const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
-  instagram: "instagram://story-camera",
-  snapchat: "snapchat://",
-  facebook: "facebook://stories",
-};
-
 export const SHARE_SAVED_HINT: Record<Exclude<StoryTarget, "system">, string> = {
-  instagram: "Instagram is opening. Paste the photo into the story.",
-  snapchat: "Snapchat is opening. Paste the photo into the story.",
-  facebook: "Facebook is opening. Paste the photo into the story.",
+  instagram: "Tap Instagram in the list — the photo is attached.",
+  snapchat: "Tap Snapchat in the list — the photo is attached.",
+  facebook: "Tap Facebook in the list — the photo is attached.",
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -40,7 +32,16 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines.slice(0, 3);
 }
 
+let storyCache: { key: string; blob: Blob } | null = null;
+
+function storyKey(imageDataUrl: string, breed: string): string {
+  return `${breed}:${imageDataUrl.length}:${imageDataUrl.slice(-64)}`;
+}
+
 export async function composeStoryCard(imageDataUrl: string, breed: string): Promise<Blob> {
+  const key = storyKey(imageDataUrl, breed);
+  if (storyCache?.key === key) return storyCache.blob;
+
   const photo = await loadImage(imageDataUrl);
   const width = 1080;
   const height = 1920;
@@ -80,7 +81,7 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
   ctx.font = "700 72px ui-rounded, system-ui, sans-serif";
   ctx.fillText("Look how alike I got", width / 2, 280);
 
-  ctx.font = '600 42px ui-sans-serif, system-ui, sans-serif';
+  ctx.font = "600 42px ui-sans-serif, system-ui, sans-serif";
   ctx.fillText(breed, width / 2, cardY + card + 88);
 
   ctx.fillStyle = "#8a4e32";
@@ -94,11 +95,14 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
   ctx.font = "700 34px ui-rounded, system-ui, sans-serif";
   ctx.fillText("Dogg Style", width / 2, height - 120);
 
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 0.9),
-  );
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
   if (!blob) throw new Error("blob");
+  storyCache = { key, blob };
   return blob;
+}
+
+export function prefetchStoryCard(imageDataUrl: string, breed: string): void {
+  void composeStoryCard(imageDataUrl, breed);
 }
 
 function triggerDownload(file: File) {
@@ -112,63 +116,28 @@ function triggerDownload(file: File) {
   window.setTimeout(() => URL.revokeObjectURL(url), 2_000);
 }
 
-async function blobAsPng(blob: Blob): Promise<Blob> {
-  if (blob.type === "image/png") return blob;
-  const bitmap = await createImageBitmap(blob);
-  const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return blob;
-  ctx.drawImage(bitmap, 0, 0);
-  const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-  return png ?? blob;
-}
-
-async function copyImage(blob: Blob): Promise<void> {
-  if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) return;
-  const png = await blobAsPng(blob);
-  try {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "image/png": Promise.resolve(png),
-      }),
-    ]);
-  } catch {
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
-    } catch {
-      // Safari can still reject clipboard writes without a direct tap.
-    }
-  }
-}
-
 async function nativeShare(file: File, title: string, text: string): Promise<"shared" | "saved" | "aborted"> {
   if (typeof navigator.share !== "function") {
     triggerDownload(file);
     return "saved";
   }
-  const withFiles = { title, text, files: [file] };
+  const filesOnly = { files: [file] };
   try {
-    if (typeof navigator.canShare !== "function" || navigator.canShare(withFiles)) {
-      await navigator.share(withFiles);
+    if (typeof navigator.canShare !== "function" || navigator.canShare(filesOnly)) {
+      await navigator.share(filesOnly);
       return "shared";
     }
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") return "aborted";
   }
   try {
-    await navigator.share({ files: [file] });
+    await navigator.share({ title, text, files: [file] });
     return "shared";
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") return "aborted";
+    triggerDownload(file);
+    return "saved";
   }
-  triggerDownload(file);
-  return "saved";
-}
-
-function openApp(target: Exclude<StoryTarget, "system">) {
-  window.location.href = APP_SCHEME[target];
 }
 
 export async function shareStory(opts: {
@@ -181,14 +150,5 @@ export async function shareStory(opts: {
   const file = new File([blob], opts.filename.replace(/\.jpe?g$/i, "") + "-story.jpg", {
     type: "image/jpeg",
   });
-  const title = "Look how alike I got";
-  const text = `Half me, half ${opts.breed}.`;
-
-  if (opts.target === "system" || !isAppleTouch()) {
-    return nativeShare(file, title, text);
-  }
-
-  await copyImage(blob);
-  openApp(opts.target);
-  return "saved";
+  return nativeShare(file, "Look how alike I got", `Half me, half ${opts.breed}.`);
 }
