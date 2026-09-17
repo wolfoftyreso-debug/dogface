@@ -523,6 +523,321 @@
   animation: work-bar 55s cubic-bezier(0.12, 0.64, 0.2, 1) forwards;
 }
 
+.play-stage {
+  position: relative;
+  width: 13.75rem;
+  height: 5.75rem;
+  margin-inline: auto;
+}
+
+.play-ground {
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.4rem;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-fg) 16%, transparent);
+}
+
+.play-person {
+  position: absolute;
+  left: 1.1rem;
+  bottom: 0.55rem;
+  width: 1.7rem;
+  height: 3.35rem;
+  transform-origin: 50% 100%;
+  z-index: 2;
+}
+
+.play-head {
+  position: absolute;
+  left: 0.28rem;
+  top: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--color-bg-subtle);
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--color-fg) 12%, transparent);
+}
+
+.play-torso {
+  position: absolute;
+  left: 0.42rem;
+  top: 1.05rem;
+  width: 0.82rem;
+  height: 1.45rem;
+  border-radius: 0.35rem;
+  background: var(--color-primary);
+}
+
+.play-arm {
+  position: absolute;
+  left: 0.95rem;
+  top: 1.2rem;
+  width: 1.35rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--color-bg-subtle);
+  transform-origin: 0.12rem 50%;
+  z-index: 3;
+}
+
+.play-leg {
+  position: absolute;
+  left: 0.48rem;
+  bottom: 0;
+  width: 0.3rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: var(--color-fg);
+}
+
+.play-leg.is-back {
+  left: 0.92rem;
+  opacity: 0.55;
+}
+
+.play-stick {
+  position: absolute;
+  left: 2.55rem;
+  bottom: 2.35rem;
+  width: 1.15rem;
+  height: 0.22rem;
+  border-radius: 999px;
+  background: var(--color-fg);
+  transform-origin: 0 50%;
+  z-index: 4;
+}
+
+.play-dog {
+  position: absolute;
+  left: 3.4rem;
+  bottom: 0.55rem;
+  width: 2.7rem;
+  height: 1.85rem;
+  transform-origin: 50% 100%;
+  z-index: 3;
+}
+
+.play-body {
+  position: absolute;
+  left: 0.35rem;
+  bottom: 0.28rem;
+  width: 1.85rem;
+  height: 1.05rem;
+  border-radius: 1rem 1.2rem 0.55rem 0.7rem;
+  background: var(--color-fg);
+}
+
+.play-snout {
+  position: absolute;
+  right: 0;
+  bottom: 0.55rem;
+  width: 0.85rem;
+  height: 0.55rem;
+  border-radius: 0.15rem 0.7rem 0.55rem 0.2rem;
+  background: var(--color-muted);
+}
+
+.play-snout::after {
+  content: "";
+  position: absolute;
+  right: 0.08rem;
+  top: 0.08rem;
+  width: 0.28rem;
+  height: 0.22rem;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+
+.play-eye {
+  position: absolute;
+  right: 0.78rem;
+  top: 0.28rem;
+  width: 0.22rem;
+  height: 0.22rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  z-index: 2;
+}
+
+.play-ear {
+  position: absolute;
+  left: 0.55rem;
+  top: 0;
+  width: 0.55rem;
+  height: 0.7rem;
+  border-radius: 0.5rem 0.5rem 0.1rem 0.4rem;
+  background: var(--color-fg);
+  transform: rotate(-18deg);
+}
+
+.play-ear.is-back {
+  left: 1rem;
+  opacity: 0.55;
+  transform: rotate(12deg);
+}
+
+.play-tail {
+  position: absolute;
+  left: 0;
+  bottom: 0.85rem;
+  width: 0.7rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--color-fg);
+  transform-origin: 100% 50%;
+}
+
+.play-stage.is-fetch .play-arm {
+  animation: play-throw-arm 2.6s cubic-bezier(0.45, 0.05, 0.2, 1) infinite;
+}
+
+.play-stage.is-fetch .play-stick {
+  animation: play-stick-fly 2.6s cubic-bezier(0.45, 0.05, 0.2, 1) infinite;
+}
+
+.play-stage.is-fetch .play-dog {
+  animation: play-dog-run 2.6s cubic-bezier(0.45, 0.05, 0.2, 1) infinite;
+}
+
+.play-stage.is-fetch .play-tail {
+  animation: play-tail-wag 0.28s ease-in-out infinite;
+}
+
+.play-stage.is-eat .play-person {
+  animation: play-eat-person 1.35s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.play-stage.is-eat .play-dog {
+  animation: play-eat-dog 1.35s cubic-bezier(0.18, 0.8, 0.22, 1) forwards;
+}
+
+.play-stage.is-eat .play-stick {
+  animation: play-eat-stick 0.35s ease-in forwards;
+}
+
+.play-stage.is-eat .play-arm {
+  transform: rotate(-20deg);
+}
+
+.play-stage.is-eat .play-tail {
+  animation: play-tail-wag 0.18s ease-in-out infinite;
+}
+
+@keyframes play-throw-arm {
+  0%,
+  8% {
+    transform: rotate(-78deg);
+  }
+  18% {
+    transform: rotate(28deg);
+  }
+  32%,
+  100% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes play-stick-fly {
+  0%,
+  12% {
+    transform: translate(0, 0) rotate(-18deg);
+    opacity: 1;
+  }
+  34% {
+    transform: translate(8.4rem, -1.7rem) rotate(18deg);
+    opacity: 1;
+  }
+  42% {
+    transform: translate(8.6rem, 0.15rem) rotate(8deg);
+    opacity: 1;
+  }
+  48%,
+  100% {
+    transform: translate(8.6rem, 0.15rem) rotate(8deg);
+    opacity: 0;
+  }
+}
+
+@keyframes play-dog-run {
+  0%,
+  16% {
+    transform: translateX(0) scaleX(1);
+  }
+  40% {
+    transform: translateX(6.6rem) scaleX(1);
+  }
+  48% {
+    transform: translateX(6.6rem) scaleX(-1);
+  }
+  78% {
+    transform: translateX(0.15rem) scaleX(-1);
+  }
+  86%,
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes play-tail-wag {
+  from {
+    transform: rotate(-28deg);
+  }
+  to {
+    transform: rotate(32deg);
+  }
+}
+
+@keyframes play-eat-person {
+  0%,
+  28% {
+    transform: translate(0, 0) rotate(0) scale(1);
+    opacity: 1;
+  }
+  48% {
+    transform: translate(0.2rem, 0.1rem) rotate(-12deg) scale(0.92);
+    opacity: 1;
+  }
+  72% {
+    transform: translate(1.4rem, 0.55rem) rotate(-48deg) scale(0.35);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(1.9rem, 0.7rem) rotate(-70deg) scale(0.08);
+    opacity: 0;
+  }
+}
+
+@keyframes play-eat-dog {
+  0% {
+    transform: translateX(1.2rem) scaleX(-1) scaleY(1);
+  }
+  22% {
+    transform: translateX(0.4rem) scaleX(-1) scaleY(0.9);
+  }
+  48% {
+    transform: translateX(-0.85rem) scaleX(-1) scale(1.15, 1.08);
+  }
+  68% {
+    transform: translateX(-0.55rem) scaleX(-1) scale(1.28, 1.12);
+  }
+  82% {
+    transform: translateX(-0.35rem) scaleX(-1) scale(1.22, 1.06);
+  }
+  100% {
+    transform: translateX(-0.2rem) scaleX(-1) scale(1.18, 1.04);
+  }
+}
+
+@keyframes play-eat-stick {
+  to {
+    opacity: 0;
+    transform: translateY(0.6rem) scale(0.4);
+  }
+}
+
 @keyframes work-spin {
   to {
     transform: rotate(360deg);
@@ -565,7 +880,15 @@
   }
 
   .work-spin,
-  .work-bar-fill {
+  .work-bar-fill,
+  .play-stage.is-fetch .play-arm,
+  .play-stage.is-fetch .play-stick,
+  .play-stage.is-fetch .play-dog,
+  .play-stage.is-fetch .play-tail,
+  .play-stage.is-eat .play-person,
+  .play-stage.is-eat .play-dog,
+  .play-stage.is-eat .play-stick,
+  .play-stage.is-eat .play-tail {
     animation: none;
   }
 

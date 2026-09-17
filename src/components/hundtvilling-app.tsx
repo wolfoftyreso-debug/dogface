@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Camera, Copy, Download, ImagePlus, Images, Info, Loader2, Share2 } from "lucide-react";
+import { Camera, Copy, Download, ImagePlus, Images, Info, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateDogTwin, getGeneration } from "@/lib/generate";
 import { confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
@@ -18,9 +18,15 @@ import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/type
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
+import { FetchPlay } from "@/components/fetch-play";
 
 const GENERATE_WAIT_MS = 180_000;
 const JOB_KEY = "ht_job_id";
+const EAT_MS = 1350;
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function hasLiveCamera(): boolean {
   return typeof navigator.mediaDevices?.getUserMedia === "function";
@@ -55,6 +61,7 @@ export function HundtvillingApp() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [savePressUrl, setSavePressUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [playMode, setPlayMode] = useState<"fetch" | "eat">("fetch");
 
   useEffect(() => {
     void listHistory()
@@ -211,21 +218,30 @@ export function HundtvillingApp() {
     return true;
   }
 
+  async function finishWithEat(): Promise<void> {
+    if (prefersReducedMotion()) return;
+    setPlayMode("eat");
+    await new Promise((resolve) => window.setTimeout(resolve, EAT_MS));
+  }
+
   async function resumeJob(requestId: string) {
     if (inFlight.current) return;
     inFlight.current = true;
     setWorking(true);
+    setPlayMode("fetch");
     setWorkStep("paint");
     setError(null);
     try {
       const peek = await getGeneration({ data: { id: requestId } });
       if (peek.ok && peek.status === "ready") {
+        await finishWithEat();
         await applyReady(peek);
         return;
       }
       if (!peek.ok) return;
       const response = await pollUntilReady(requestId);
       if (response.ok) {
+        await finishWithEat();
         if (await applyReady(response)) return;
         setError(ERROR_MESSAGES.timeout);
         return;
@@ -245,6 +261,7 @@ export function HundtvillingApp() {
     if (inFlight.current) return;
     inFlight.current = true;
     setWorking(true);
+    setPlayMode("fetch");
     setWorkStep("read");
     setError(null);
     setShareHint(null);
@@ -287,6 +304,7 @@ export function HundtvillingApp() {
         }
         return;
       }
+      await finishWithEat();
       if (!(await applyReady(response))) {
         setError(ERROR_MESSAGES.timeout);
       }
@@ -505,9 +523,11 @@ export function HundtvillingApp() {
 
         {working ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
-            <Loader2 className="work-spin size-8 text-fg" strokeWidth={1.75} />
-            <p className="text-base font-medium">{workStep === "read" ? "Reading the photo …" : "Making your dog …"}</p>
-            <p className="text-sm text-muted">About 20 seconds.</p>
+            <FetchPlay mode={playMode} />
+            <p className="text-base font-medium">
+              {playMode === "eat" ? "Gotcha." : workStep === "read" ? "Reading the photo …" : "Making your dog …"}
+            </p>
+            {playMode === "fetch" ? <p className="text-sm text-muted">About 20 seconds.</p> : null}
           </div>
         ) : null}
 
