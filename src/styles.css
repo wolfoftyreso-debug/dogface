@@ -199,6 +199,20 @@
   object-fit: cover;
 }
 
+.hero-tag {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  margin: 0;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-fg) 72%, transparent);
+  color: var(--color-primary-fg);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .photo-frame {
   position: relative;
   width: 100%;

@@ -27,7 +27,7 @@ import {
   type Visitor,
 } from "./session.server";
 import { env } from "./env.server.ts";
-import { packPortraits, unpackPortraits } from "./result-pack";
+import { packPortraits, toClientPortraits, unpackPortraits } from "./result-pack";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult, type PortraitStyle } from "./types";
 
 function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
@@ -61,6 +61,7 @@ type MemJob = {
   reason: string;
   imageDataUrl: string;
   splitDataUrl?: string;
+  dogDataUrl?: string;
   errorCode: GenerateErrorCode | "";
   remaining: number;
 };
@@ -82,14 +83,16 @@ function readyResult(
   reason: string,
   remaining: number,
 ): GenerateResult {
+  const view = toClientPortraits(portraits);
   return {
     ok: true,
     id,
     status: "ready",
     breed,
     reason,
-    imageDataUrl: portraits.dog,
-    splitDataUrl: portraits.split,
+    imageDataUrl: view.imageDataUrl,
+    splitDataUrl: view.splitDataUrl,
+    dogDataUrl: view.dogDataUrl,
     remaining,
   };
 }
@@ -344,14 +347,16 @@ async function finishMemJob(
     const current = memJobs().get(requestId);
     if (current) current.status = "generating";
     const portraits = await producePortraits(image, analysis);
+    const view = toClientPortraits(portraits);
     memJobs().set(requestId, {
       id: requestId,
       visitorId: visitor.id,
       status: "ready",
       breed: analysis.breedName,
       reason: analysis.reason,
-      imageDataUrl: portraits.dog,
-      splitDataUrl: portraits.split,
+      imageDataUrl: view.imageDataUrl,
+      splitDataUrl: view.splitDataUrl,
+      dogDataUrl: view.dogDataUrl,
       errorCode: "",
       remaining: remainingOf(visitor),
     });
@@ -381,13 +386,17 @@ export async function readGeneration(id: string): Promise<GenerateResult> {
   const mem = memJobs().get(id);
   if (mem) {
     if (mem.status === "ready") {
-      return readyResult(
-        mem.id,
-        { dog: mem.imageDataUrl, split: mem.splitDataUrl },
-        mem.breed,
-        mem.reason,
-        mem.remaining,
-      );
+      return {
+        ok: true,
+        id: mem.id,
+        status: "ready",
+        breed: mem.breed,
+        reason: mem.reason,
+        imageDataUrl: mem.imageDataUrl,
+        splitDataUrl: mem.splitDataUrl,
+        dogDataUrl: mem.dogDataUrl,
+        remaining: mem.remaining,
+      };
     }
     if (mem.status === "rejected" || mem.status === "failed") {
       return fail((mem.errorCode as GenerateErrorCode) || "failed", mem.remaining);

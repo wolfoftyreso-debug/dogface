@@ -172,25 +172,41 @@ export async function produceIdentityDog(
   return generateDogImage(imageDataUrl, analysis, style);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function generateWithRetry(
+  imageDataUrl: string,
+  analysis: AnalysisResult,
+  style: PortraitStyle,
+): Promise<string> {
+  try {
+    return await generateDogImage(imageDataUrl, analysis, style);
+  } catch (err) {
+    if (err instanceof AppError && err.code === "unavailable") throw err;
+    await sleep(1200);
+    return generateDogImage(imageDataUrl, analysis, style);
+  }
+}
+
 export async function producePortraits(
   imageDataUrl: string,
   analysis: AnalysisResult,
 ): Promise<{ dog: string; split?: string }> {
-  const [dogResult, splitResult] = await Promise.allSettled([
-    generateDogImage(imageDataUrl, analysis, "dog"),
-    generateDogImage(imageDataUrl, analysis, "split"),
+  const [splitResult, dogResult] = await Promise.allSettled([
+    generateWithRetry(imageDataUrl, analysis, "split"),
+    generateWithRetry(imageDataUrl, analysis, "dog"),
   ]);
-  if (dogResult.status !== "fulfilled") {
-    throw dogResult.reason;
-  }
+  const split = splitResult.status === "fulfilled" ? splitResult.value : undefined;
+  const dog = dogResult.status === "fulfilled" ? dogResult.value : undefined;
   if (splitResult.status !== "fulfilled") {
     console.info(
-      "[hundtvilling] split generate skipped",
+      "[hundtvilling] split generate retry-exhausted",
       splitResult.reason instanceof Error ? splitResult.reason.message : "error",
     );
   }
-  return {
-    dog: dogResult.value,
-    split: splitResult.status === "fulfilled" ? splitResult.value : undefined,
-  };
+  if (split) return { dog: dog ?? split, split };
+  if (dog) return { dog };
+  throw splitResult.status === "rejected" ? splitResult.reason : dogResult.status === "rejected" ? dogResult.reason : new AppError("failed");
 }

@@ -3,6 +3,12 @@ export type PackedPortraits = {
   split?: string;
 };
 
+export type ClientPortraits = {
+  imageDataUrl: string;
+  splitDataUrl?: string;
+  dogDataUrl?: string;
+};
+
 export function packPortraits(portraits: PackedPortraits): string {
   if (!portraits.split) return portraits.dog;
   return JSON.stringify({ dog: portraits.dog, split: portraits.split });
@@ -25,4 +31,16 @@ export function unpackPortraits(raw: string | null | undefined): PackedPortraits
   } catch {
     return null;
   }
+}
+
+/** Fused morph is the default photo. Full dog is the Hund toggle. */
+export function toClientPortraits(portraits: PackedPortraits): ClientPortraits {
+  if (portraits.split) {
+    return {
+      imageDataUrl: portraits.split,
+      splitDataUrl: portraits.split,
+      dogDataUrl: portraits.dog !== portraits.split ? portraits.dog : undefined,
+    };
+  }
+  return { imageDataUrl: portraits.dog };
 }

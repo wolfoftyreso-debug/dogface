@@ -24,7 +24,9 @@ export function isHistoryItem(value: unknown): value is HistoryItem {
     (item.sourceDataUrl === undefined ||
       (typeof item.sourceDataUrl === "string" && item.sourceDataUrl.startsWith("data:image/"))) &&
     (item.splitDataUrl === undefined ||
-      (typeof item.splitDataUrl === "string" && item.splitDataUrl.startsWith("data:image/")))
+      (typeof item.splitDataUrl === "string" && item.splitDataUrl.startsWith("data:image/"))) &&
+    (item.dogDataUrl === undefined ||
+      (typeof item.dogDataUrl === "string" && item.dogDataUrl.startsWith("data:image/")))
   );
 }
 

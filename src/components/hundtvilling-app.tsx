@@ -52,7 +52,16 @@ export function HundtvillingApp() {
   const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
-    void listHistory().then(setHistory).catch(() => undefined);
+    void listHistory()
+      .then((items) => {
+        setHistory(items);
+        const first = items[0];
+        if (first) {
+          setLatest(first);
+          setStyle(first.splitDataUrl ? "split" : "dog");
+        }
+      })
+      .catch(() => undefined);
     void getBalance()
       .then((balance) => {
         setRemaining(balance.remaining);
@@ -193,8 +202,8 @@ export function HundtvillingApp() {
         breed: response.breed,
         reason: response.reason,
         imageDataUrl: response.imageDataUrl,
-        sourceDataUrl: image,
         splitDataUrl: response.splitDataUrl,
+        dogDataUrl: response.dogDataUrl,
       };
       setLatest(item);
       setStyle(response.splitDataUrl ? "split" : "dog");
@@ -205,7 +214,12 @@ export function HundtvillingApp() {
       try {
         setHistory(await saveHistoryItem(item));
       } catch {
-        setHistory((current) => [item, ...current].slice(0, 10));
+        try {
+          const slim = { ...item, dogDataUrl: undefined };
+          setHistory(await saveHistoryItem(slim));
+        } catch {
+          setHistory((current) => [item, ...current].slice(0, 10));
+        }
       }
     } catch (err) {
       const timedOut = err instanceof Error && err.message === "timeout";
@@ -253,6 +267,10 @@ export function HundtvillingApp() {
   function displayedImage(item: HistoryItem): string {
     const isLatest = item.id === latest?.id;
     if (isLatest && style === "split" && item.splitDataUrl) return item.splitDataUrl;
+    if (isLatest && style === "dog" && item.dogDataUrl) return item.dogDataUrl;
+    if (isLatest && style === "dog" && item.splitDataUrl && item.imageDataUrl !== item.splitDataUrl) {
+      return item.imageDataUrl;
+    }
     return item.imageDataUrl;
   }
 
@@ -312,6 +330,7 @@ export function HundtvillingApp() {
                   alt="Exempel: personen smälter ihop med hunden"
                   className="size-full object-cover"
                 />
+                <p className="hero-tag">Exempel</p>
               </div>
             </div>
             <h1 className="text-center font-display text-3xl tracking-tight">Vilken hund är du?</h1>
@@ -324,7 +343,13 @@ export function HundtvillingApp() {
           .map((item) => {
             const isLatest = item.id === (latest?.id ?? shown[0]?.id);
             const shownUrl =
-              isLatest && style === "split" && item.splitDataUrl ? item.splitDataUrl : item.imageDataUrl;
+              isLatest && style === "split" && item.splitDataUrl
+                ? item.splitDataUrl
+                : isLatest && style === "dog" && item.dogDataUrl
+                  ? item.dogDataUrl
+                  : isLatest && style === "dog" && item.splitDataUrl && item.imageDataUrl !== item.splitDataUrl
+                    ? item.imageDataUrl
+                    : item.imageDataUrl;
             return (
             <article key={item.id} className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
