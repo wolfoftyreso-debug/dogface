@@ -31,21 +31,21 @@ export type HistoryItem = {
 export const MAX_HISTORY = 10;
 
 export const ERROR_MESSAGES: Record<GenerateErrorCode, string> = {
-  no_image: "Lägg till ett foto först.",
-  unsupported: "Använd ett foto i JPEG, PNG eller HEIC.",
-  too_large: "Fotot är för stort. Prova ett mindre.",
-  corrupt: "Fotot ser trasigt ut. Prova ett annat.",
-  no_human: "Vi behöver ett tydligt foto av en person.",
-  ambiguous: "Flera personer syns lika tydligt. Ta ett foto med en huvudperson.",
-  rate_limit: "För många försök. Vänta en minut och prova igen.",
-  unavailable: "Bildtjänsten är inte redo just nu. Prova igen om en stund.",
-  timeout: "Det tog för lång tid. Prova igen.",
-  failed: "Kunde inte skapa hunden. Prova igen.",
-  payment_required: "Köp 5 bilder för 2,99 USD.",
-  payment_failed: "Betalningen slutfördes inte.",
-  payment_unavailable: "Köp är inte tillgängliga just nu.",
-  busy: "En bild skapas redan.",
-  disabled: "Tillfälligt avstängt.",
+  no_image: "Add a photo first.",
+  unsupported: "Use a JPEG, PNG, or HEIC photo.",
+  too_large: "That photo is too large. Try a smaller one.",
+  corrupt: "That photo looks damaged. Try another.",
+  no_human: "We need a clear photo of a person.",
+  ambiguous: "Several people are equally clear. Use a photo with one main person.",
+  rate_limit: "Too many tries. Wait a minute and try again.",
+  unavailable: "The image service isn’t ready. Try again in a moment.",
+  timeout: "That took too long. Try again.",
+  failed: "Couldn’t make the dog. Try again.",
+  payment_required: "Buy 5 photos for $2.99.",
+  payment_failed: "Payment didn’t go through.",
+  payment_unavailable: "Purchases aren’t available right now.",
+  busy: "A photo is already being made.",
+  disabled: "Temporarily unavailable.",
 };
 
 export type AnalysisResult = {

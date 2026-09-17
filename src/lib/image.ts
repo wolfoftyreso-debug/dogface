@@ -103,7 +103,7 @@ export async function preprocessPhoto(file: File): Promise<string> {
   try {
     const longest = Math.max(bitmap.width, bitmap.height);
     if (longest < MIN_EDGE) {
-      throw new PhotoError("corrupt", "Fotot är för litet. Prova ett tydligare foto.");
+      throw new PhotoError("corrupt", "That photo is too small. Try a clearer one.");
     }
     const scale = Math.min(1, MAX_EDGE / longest);
     const width = Math.max(1, Math.round(bitmap.width * scale));

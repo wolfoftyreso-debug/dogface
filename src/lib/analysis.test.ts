@@ -75,11 +75,11 @@ const genericQc: QcResult = {
 };
 
 describe("parseAnalysis", () => {
-  it("accepts a catalog breed and Swedish reason", () => {
+  it("accepts a catalog breed", () => {
     const parsed = parseAnalysis(valid);
     assert.equal(parsed?.validHuman, true);
     assert.equal(parsed?.breedId, "giant-schnauzer");
-    assert.equal(parsed?.breedName, "Riesenschnauzer");
+    assert.equal(parsed?.breedName, "Giant Schnauzer");
     assert.match(parsed?.reason ?? "", /schnauzer/i);
     assert.equal(parsed?.identityAnchors.length, 8);
     assert.match(parsed?.gaze ?? "", /camera/i);

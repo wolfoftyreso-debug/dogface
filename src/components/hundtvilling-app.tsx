@@ -108,10 +108,10 @@ export function HundtvillingApp() {
       const draft = await loadDraft();
       if (draft) {
         setPreview(draft);
-        setPaidNotice("Klart. Tryck Skapa.");
+        setPaidNotice("Done. Tap Create.");
         setError(null);
       } else {
-        setPaidNotice("Klart. Välj fotot igen.");
+        setPaidNotice("Done. Choose the photo again.");
         setError(null);
       }
     })();
@@ -123,7 +123,7 @@ export function HundtvillingApp() {
 
   const canGenerate = Boolean(preview) && !working;
   const needsPay = remaining === 0 && paymentsReady;
-  const primaryLabel = needsPay ? "Köp 2,99 USD" : "Skapa";
+  const primaryLabel = needsPay ? "Buy $2.99" : "Create";
   const remainingLabel =
     remaining === null || !paymentsReady ? "" : remaining === 0 ? "0" : String(remaining);
 
@@ -347,10 +347,10 @@ export function HundtvillingApp() {
     try {
       const result = await savePhoto(displayedImage(item), filenameForBreed(item.breed));
       if (!result.ok) return;
-      if (result.mode === "downloaded") setShareHint("Bilden sparades.");
+      if (result.mode === "downloaded") setShareHint("Photo saved.");
       if (result.mode === "press") setSavePressUrl(result.objectUrl);
     } catch {
-      setShareHint("Kunde inte spara. Prova Dela i stället.");
+      setShareHint("Couldn’t save. Try Share instead.");
     } finally {
       setSaving(false);
     }
@@ -379,7 +379,7 @@ export function HundtvillingApp() {
         </div>
         <div className="flex items-center gap-1">
           {remainingLabel ? (
-            <p className="brand-count" aria-label={`${remainingLabel} bilder kvar`}>
+            <p className="brand-count" aria-label={`${remainingLabel} photos left`}>
               {remainingLabel}
             </p>
           ) : null}
@@ -396,13 +396,13 @@ export function HundtvillingApp() {
               <div className="photo-hero is-fill">
                 <img
                   src="/hero-split.jpg"
-                  alt="Exempel: personen smälter ihop med hunden"
+                  alt="Example: the person fused with the dog"
                   className="size-full object-cover"
                 />
-                <p className="hero-tag">Exempel</p>
+                <p className="hero-tag">Example</p>
               </div>
             </div>
-            <h1 className="text-center font-display text-3xl tracking-tight">Vilken hund är du?</h1>
+            <h1 className="text-center font-display text-3xl tracking-tight">Which dog are you?</h1>
           </div>
         ) : null}
 
@@ -423,14 +423,14 @@ export function HundtvillingApp() {
             <article key={item.id} className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
                 <div className="photo-square">
-                  <img src={shownUrl} alt={`En ${item.breed}`} className="size-full object-contain" />
+                  <img src={shownUrl} alt={item.breed} className="size-full object-contain" />
                 </div>
               </div>
               <div>
                 <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
               </div>
               {isLatest && item.splitDataUrl && item.dogDataUrl ? (
-                <div className="style-toggle" role="radiogroup" aria-label="Bildstil">
+                <div className="style-toggle" role="radiogroup" aria-label="Photo style">
                   <button
                     type="button"
                     role="radio"
@@ -438,7 +438,7 @@ export function HundtvillingApp() {
                     className={style === "dog" ? "is-on" : undefined}
                     onClick={() => setStyle("dog")}
                   >
-                    Hund
+                    Dog
                   </button>
                   <button
                     type="button"
@@ -456,14 +456,14 @@ export function HundtvillingApp() {
                   variant="secondary"
                   onClick={() => void saveImage(item)}
                   disabled={saving}
-                  aria-label="Spara bild"
+                  aria-label="Save photo"
                 >
                   <Download className="size-4" strokeWidth={1.75} />
-                  {saving ? "Sparar …" : "Spara"}
+                  {saving ? "Saving …" : "Save"}
                 </Button>
-                <Button variant="secondary" onClick={() => openShare(item)} aria-label="Dela till story">
+                <Button variant="secondary" onClick={() => openShare(item)} aria-label="Share to story">
                   <Share2 className="size-4" strokeWidth={1.75} />
-                  Dela
+                  Share
                 </Button>
               </div>
               {item.id === shown[0]?.id ? (
@@ -473,10 +473,10 @@ export function HundtvillingApp() {
                     setShareHint(null);
                     libraryRef.current?.click();
                   }}
-                  aria-label="Ny bild"
+                  aria-label="New photo"
                 >
                   <ImagePlus className="size-4" strokeWidth={1.75} />
-                  Ny bild
+                  New photo
                 </Button>
               ) : null}
             </article>
@@ -486,7 +486,7 @@ export function HundtvillingApp() {
         {preview ? (
           <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
             <div className="photo-frame">
-              <img src={preview} alt="Valt foto" className="size-full object-contain" />
+              <img src={preview} alt="Chosen photo" className="size-full object-contain" />
             </div>
             {!working ? (
               <button
@@ -497,7 +497,7 @@ export function HundtvillingApp() {
                 }}
                 className="mt-2 w-full py-2 text-center text-sm font-medium text-muted"
               >
-                Ta bort foto
+                Remove photo
               </button>
             ) : null}
           </div>
@@ -506,8 +506,8 @@ export function HundtvillingApp() {
         {working ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
             <Loader2 className="work-spin size-8 text-fg" strokeWidth={1.75} />
-            <p className="text-base font-medium">{workStep === "read" ? "Läser fotot …" : "Skapar din hund …"}</p>
-            <p className="text-sm text-muted">Cirka 20 sekunder.</p>
+            <p className="text-base font-medium">{workStep === "read" ? "Reading the photo …" : "Making your dog …"}</p>
+            <p className="text-sm text-muted">About 20 seconds.</p>
           </div>
         ) : null}
 
@@ -529,20 +529,20 @@ export function HundtvillingApp() {
         {restoreCode ? (
           <div className="rounded-xl bg-surface p-3 text-sm text-muted ring-1 ring-border">
             <p>
-              Kod: <span className="font-medium text-fg">{restoreCode}</span>
+              Code: <span className="font-medium text-fg">{restoreCode}</span>
             </p>
             <button
               type="button"
               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-fg underline-offset-2 hover:underline"
               onClick={() => {
                 void navigator.clipboard?.writeText(restoreCode).then(
-                  () => setShareHint("Koden är kopierad."),
-                  () => setShareHint("Kopiera koden manuellt."),
+                  () => setShareHint("Code copied."),
+                  () => setShareHint("Copy the code yourself."),
                 );
               }}
             >
               <Copy className="size-3.5" strokeWidth={2} />
-              Kopiera kod
+              Copy code
             </button>
           </div>
         ) : null}
@@ -550,13 +550,13 @@ export function HundtvillingApp() {
 
       <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={openCamera} aria-label="Ta foto">
+          <Button variant="secondary" onClick={openCamera} aria-label="Take photo">
             <Camera className="size-4" strokeWidth={1.75} />
-            Kamera
+            Camera
           </Button>
-          <Button variant="secondary" onClick={() => libraryRef.current?.click()} aria-label="Välj bild">
+          <Button variant="secondary" onClick={() => libraryRef.current?.click()} aria-label="Choose photo">
             <Images className="size-4" strokeWidth={1.75} />
-            Bild
+            Photo
           </Button>
         </div>
         <Button className="mt-3" onClick={() => void onPrimary()} disabled={working || (!needsPay && !canGenerate)}>
@@ -571,7 +571,7 @@ export function HundtvillingApp() {
         capture="environment"
         className="sr-only"
         onChange={onInputChange}
-        aria-label="Ta foto"
+        aria-label="Take photo"
       />
       <input
         ref={libraryRef}
@@ -579,7 +579,7 @@ export function HundtvillingApp() {
         accept={PHOTO_ACCEPT}
         className="sr-only"
         onChange={onInputChange}
-        aria-label="Välj bild"
+        aria-label="Choose photo"
       />
 
       <RestoreDialog
@@ -604,14 +604,14 @@ export function HundtvillingApp() {
         <ShareSheet item={shareItem} onClose={() => setShareItem(null)} onHint={setShareHint} />
       ) : null}
       {savePressUrl ? (
-        <div className="share-sheet" role="dialog" aria-label="Spara bild" aria-modal="true">
-          <button type="button" className="share-dismiss" aria-label="Stäng" onClick={closeSavePress} />
+        <div className="share-sheet" role="dialog" aria-label="Save photo" aria-modal="true">
+          <button type="button" className="share-dismiss" aria-label="Close" onClick={closeSavePress} />
           <div className="share-card">
-            <h2 className="font-display text-2xl tracking-tight">Spara bilden</h2>
-            <p className="mt-2 text-sm text-muted">Håll inne bilden och välj Spara bild.</p>
-            <img src={savePressUrl} alt="Din hund" className="mt-4 w-full rounded-2xl" />
+            <h2 className="font-display text-2xl tracking-tight">Save photo</h2>
+            <p className="mt-2 text-sm text-muted">Press and hold the image, then tap Save Image.</p>
+            <img src={savePressUrl} alt="Your dog" className="mt-4 w-full rounded-2xl" />
             <Button className="mt-4" variant="secondary" onClick={closeSavePress}>
-              Klar
+              Done
             </Button>
           </div>
         </div>
@@ -632,21 +632,21 @@ export function HundtvillingApp() {
 function InfoSheet({ onClose, onRestore }: { onClose: () => void; onRestore: () => void }) {
   return (
     <div className="share-sheet" role="dialog" aria-label="Info" aria-modal="true">
-      <button type="button" className="share-dismiss" aria-label="Stäng" onClick={onClose} />
+      <button type="button" className="share-dismiss" aria-label="Close" onClick={onClose} />
       <div className="share-card">
         <h2 className="font-display text-2xl tracking-tight">Dogg Style</h2>
         <nav className="mt-5 flex flex-col">
           <a className="info-link" href="/integritet">
-            Integritet
+            Privacy
           </a>
           <a className="info-link" href="/villkor">
-            Villkor
+            Terms
           </a>
           <a className="info-link" href="/support">
             Support
           </a>
           <button type="button" className="info-link" onClick={onRestore}>
-            Återställ köp
+            Restore purchase
           </button>
         </nav>
       </div>

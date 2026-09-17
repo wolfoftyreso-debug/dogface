@@ -64,7 +64,7 @@ export function parseAnalysis(raw: unknown): AnalysisResult | null {
     validHuman: data.validHuman,
     subjectSelection: data.subjectSelection,
     breedId: breed?.id ?? (data.validHuman ? clipText(data.breedId, 64) : ""),
-    breedName: breed?.nameSv ?? (data.validHuman ? clipText(data.breedName, 80) : ""),
+    breedName: breed?.nameEn ?? (data.validHuman ? clipText(data.breedName, 80) : ""),
     visibleTraits: clipText(data.visibleTraits, 280),
     reason: clipText(data.reason, 160),
     renderBrief: clipText(data.renderBrief, 900),
@@ -91,7 +91,7 @@ export function fallbackAnalysis(): AnalysisResult {
     validHuman: true,
     subjectSelection: "primary",
     breedId: "mixed",
-    breedName: "Blandras",
+    breedName: "Mixed breed",
     visibleTraits: "",
     reason: "",
     renderBrief:

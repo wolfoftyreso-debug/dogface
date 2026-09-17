@@ -5,23 +5,23 @@ export const Route = createFileRoute("/villkor")({ component: TermsPage });
 
 function TermsPage() {
   return (
-    <LegalPage title="Villkor">
+    <LegalPage title="Terms">
       <p>
-        Första lyckade hundbilden är gratis. Därefter kan du köpa fem ytterligare bilder för 2,99 USD.
-        Det är ett engångsköp. Ingen prenumeration och ingen automatisk förnyelse.
+        The first successful dog photo is free. After that you can buy five more photos for $2.99.
+        It’s a one-time purchase. No subscription and no auto-renewal.
       </p>
       <p>
-        En bild förbrukas bara när en användbar hundbild faktiskt har skapats. Ogiltiga foton och
-        tekniska fel drar inte en bild. Att spara eller dela samma resultat är gratis. En ny begärd
-        bild är en ny generering.
+        A credit is used only when a usable dog photo is actually made. Invalid photos and technical
+        errors don’t use a credit. Saving or sharing the same result is free. A new request is a new
+        generation.
       </p>
       <p>
-        Resultatet är underhållning, inte en vetenskaplig bedömning. Använd bara foton du har rätt att
-        använda.
+        The result is entertainment, not a scientific judgment. Only use photos you have the right
+        to use.
       </p>
       <p>
-        Betalning hanteras av Stripe Checkout. Återbetalning återkallar oanvända köpta bilder från det
-        köpet, inte andra giltiga köp.
+        Payment is handled by Stripe Checkout. A refund revokes unused purchased photos from that
+        purchase, not other valid purchases.
       </p>
     </LegalPage>
   );

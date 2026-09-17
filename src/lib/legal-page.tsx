@@ -4,7 +4,7 @@ export function LegalPage({ title, children }: { title: string; children: ReactN
   return (
     <main className="app-shell">
       <a href="/" className="text-sm text-muted">
-        Tillbaka
+        Back
       </a>
       <h1 className="mt-6 font-display text-3xl tracking-tight">{title}</h1>
       <div className="mt-6 space-y-4 text-base leading-relaxed text-muted">{children}</div>

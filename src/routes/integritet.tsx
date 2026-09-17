@@ -5,31 +5,32 @@ export const Route = createFileRoute("/integritet")({ component: PrivacyPage });
 
 function PrivacyPage() {
   return (
-    <LegalPage title="Integritet">
+    <LegalPage title="Privacy">
       <p>
-        Dogg Style skapar en lekfull hundbild från ett foto du väljer. Fotot skickas till vår
-        AI-leverantör (xAI) för analys och bildgenerering.
+        Dogg Style makes a playful dog photo from a picture you choose. The photo is sent to our AI
+        provider (xAI) for analysis and image generation.
       </p>
       <p>
-        Vi lagrar ingen inloggning. En anonym sessionscookie (HttpOnly) håller reda på din gratisbild
-        och köpta bilder. Originalfotot sparas inte permanent på servern. En färdig hundbild kan
-        buffras privat i högst 24 timmar för att kunna levereras igen vid avbrott.
+        We don’t store a login. An anonymous session cookie (HttpOnly) tracks your free photo and
+        purchased photos. The original photo is not kept permanently on the server. A finished dog
+        photo may be buffered privately for up to 24 hours so it can be delivered again if something
+        drops.
       </p>
       <p>
-        Databasens säkerhetskopior och leverantörernas lagring kan leva längre än 24 timmar. Vi lovar
-        inte att varje kopia överallt försvinner exakt då.
+        Database backups and provider storage can live longer than 24 hours. We don’t promise that
+        every copy everywhere disappears at that exact time.
       </p>
       <p>
-        Bildhistoriken ligger i din webbläsare. Den synkas inte mellan enheter och molnåterställs inte.
-        Köpta bilder kan återställas med återställningskoden från köpet.
+        Photo history lives in your browser. It doesn’t sync across devices and isn’t restored from
+        the cloud. Purchased photos can be restored with the restore code from the purchase.
       </p>
       <p>
-        Betalning sker via Stripe. Vi identifierar inte vem du är och gör inga bedömningar av
-        personlighet, etnicitet, hälsa eller andra känsliga egenskaper.
+        Payment goes through Stripe. We don’t identify who you are and we don’t judge personality,
+        ethnicity, health, or other sensitive traits.
       </p>
       <p>
-        Utan verifierad identitet kan vi inte garantera exakt en gratisbild per fysisk person. En ny
-        webbläsarsession efter rensad lagring kan ge en ny gratisbild.
+        Without a verified identity we can’t guarantee exactly one free photo per person. A new
+        browser session after clearing storage can grant a new free photo.
       </p>
     </LegalPage>
   );

@@ -1,16 +1,16 @@
 # Dogg Style
 
-En mobil webbapp som tar ett foto av en människa och skapar ett fotorealistiskt porträtt av den hund personen liknar.
+A mobile web app that takes a photo of a person and makes a photorealistic portrait of the dog they look like.
 
-Första lyckade bilden är gratis. Därefter: fem bilder för 2,99 USD som engångsköp. Ingen prenumeration.
+The first successful photo is free. After that: five photos for $2.99 as a one-time purchase. No subscription.
 
 ## Stack
 
-TanStack Start (Vite) + React + TypeScript. Förhandsvisningen i den här byggmiljön kräver port 8080 och den befintliga Start-servern, därför används inte Next.js App Router.
+TanStack Start (Vite) + React + TypeScript. The preview in this build environment needs port 8080 and the existing Start server, so this is not Next.js App Router.
 
-xAI Grok för bildanalys (`grok-4.5`) och bildredigering (`grok-imagine-image-2.0`). Stripe Checkout för köp. Neon Postgres i produktion, PGLite i lokal förhandsvisning. IndexedDB för de senaste 10 resultaten.
+xAI Grok for photo analysis (`grok-4.5`) and image editing (`grok-imagine-image-2.0`). Stripe Checkout for purchases. Neon Postgres in production, PGLite in local preview. IndexedDB for the last 10 results.
 
-## Kommandon
+## Commands
 
 ```bash
 npm run dev
@@ -20,56 +20,51 @@ npm run lint
 npm run build
 ```
 
-## Flöde
+## Flow
 
-1. Anonym HttpOnly-session (`ht_sid`). Servern lagrar en hash av token.
-2. Foto normaliseras i webbläsaren (max 1600 px, JPEG, högst ~2 MB).
-3. Servern reserverar en bild, analyserar mot en kennelklubbslista och genererar en hund (inte hybrid, inte split).
-4. Reservation förbrukas först när en användbar bild finns. Fel och ogiltiga foton släpper reservationen.
-5. Historik (max 10) i IndexedDB. Köpt saldo i databasen.
+1. Take or pick a photo.
+2. The photo is normalized in the browser (max 1600 px, JPEG, about 2 MB).
+3. The server analyzes the photo and paints the dog.
+4. A credit is used only when a usable photo exists. Errors and invalid photos release the reservation.
+5. History (max 10) in IndexedDB. Purchased balance in the database.
 
-## Betalning
+## Payments
 
-Stripe Checkout, 299 cent, produktnamn `5 hundbilder`. Webhook: `/api/stripe/webhook`. Housekeeping: `GET /api/cron/housekeeping` med `Authorization: Bearer $CRON_SECRET`.
+Stripe Checkout, 299 cents, product name `5 dog photos`. Webhook: `/api/stripe/webhook`. Housekeeping: `GET /api/cron/housekeeping` with `Authorization: Bearer $CRON_SECRET`.
 
-Utan Stripe-nycklar visas ett ärligt blockerat köpläge. Saknad `XAI_API_KEY` ger inga slumpmässiga raser eller exempelbilder.
+Without Stripe keys, purchases stay honestly blocked. A missing `XAI_API_KEY` does not invent random breeds or sample photos.
 
-Återställningskod `HT-XXXX-XXXX-XXXX` visas efter köp. Bildhistoriken är lokal och kan inte molnåterställas.
+Restore code `HT-XXXX-XXXX-XXXX` is shown after purchase. Photo history is local and cannot be restored from the cloud.
 
-## Hemligheter
+## Secrets
 
-Inga nycklar i klientkod. Se `.env.example`. Sätt dem i Vercel, committa dem inte.
+No keys in client code. See `.env.example`. Set them in Vercel; do not commit them.
 
-| Variabel | Syfte |
+| Variable | Use |
 |---|---|
-| `XAI_API_KEY` | xAI, server only |
-| `XAI_VISION_MODEL` | standard `grok-4.5` |
-| `XAI_IMAGE_MODEL` | standard `grok-imagine-image-2.0` |
-| `STRIPE_SECRET_KEY` | Checkout + session retrieve |
-| `STRIPE_WEBHOOK_SECRET` | signaturverifiering |
-| `STRIPE_PRICE_ID` | valfritt; annars `price_data` 299 USD cent |
-| `DATABASE_URL` | Neon i produktion |
-| `APP_BASE_URL` | Checkout return-URL |
+| `XAI_API_KEY` | generation |
+| `STRIPE_SECRET_KEY` | Checkout |
+| `STRIPE_WEBHOOK_SECRET` | webhook |
+| `DATABASE_URL` | Neon |
+| `GENERATIONS_ENABLED` | kill switch |
+| `SESSION_SECRET` | restore codes |
 | `CRON_SECRET` | housekeeping |
-| `GENERATIONS_ENABLED` | nödstopp |
-| `GENERATION_BUDGET_MAX` | globalt tak |
-| `SESSION_SECRET` | återställningskoder |
 
-Webhook-endpoint: `https://<domän>/api/stripe/webhook` för både test- och livemiljö, med respektive hemlighet.
+Webhook endpoint: `https://<domain>/api/stripe/webhook` for test and live, with the matching secret.
 
-## Kostnadskalkyl (uppskattning)
+## Cost notes
 
-Märkt som uppskattning. Konsumentpriset är 2,99 USD och ändras inte här.
+Marked as estimates. The consumer price is $2.99 and does not change here.
 
-- Bildanalys, Grok Vision: uppskattningsvis någon cent per anrop beroende på bildstorlek.
-- Bildgenerering/redigering, 1K: xAI listar omkring 0,04 USD per bild; redigering kan debiteras för både indata och utdata.
-- Normala fel/återförsök: max en extra AI-runda, inte en extra saldodragning.
-- Stripe: 2,9 % + 0,30 USD på 2,99 USD ≈ 0,39 USD.
-- Drift: Vercel + Neon, låg vid v1-volym.
-- Gratisbilden betalas av appägaren.
+- Photo analysis, Grok Vision: roughly a fraction of a cent per call depending on size.
+- Image generation/edit, 1K: xAI lists about $0.04 per image; edits may bill input and output.
+- Normal errors/retries: at most one extra AI round, not an extra credit.
+- Stripe: 2.9% + $0.30 on $2.99 ≈ $0.39.
+- Hosting: Vercel + Neon, low at v1 volume.
+- The free photo is paid by the app owner.
 
-## Databas
+## Data
 
-Tabellerna täcker anonyma sessioner, köp, genereringsjobb, webhook-idempotens och rate limits. Originalfoton lagras inte. Färdig hundbild buffras högst 24 timmar. Säkerhetskopior hos Neon/xAI/Stripe följer deras egna retention — inte ett 24-timmarslöfte överallt.
+Tables cover anonymous sessions, purchases, generation jobs, webhook idempotency, and rate limits. Original photos are not stored. A finished dog photo is buffered for up to 24 hours. Backups at Neon/xAI/Stripe follow their own retention — not a 24-hour promise everywhere.
 
-Housekeeping rensar utgångna resultat och fastnade reservationer (äldre än 3 minuter) med engångsåterföring.
+Housekeeping clears expired results and stuck reservations (older than 3 minutes) with a one-time refund of the credit.

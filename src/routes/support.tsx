@@ -7,16 +7,17 @@ function SupportPage() {
   return (
     <LegalPage title="Support">
       <p>
-        Om ett köp inte syns: använd återställningskoden som visades efter betalningen. Bildhistoriken
-        är lokal och kan inte återskapas från molnet.
+        If a purchase doesn’t show: use the restore code shown after payment. Photo history is local
+        and can’t be rebuilt from the cloud.
       </p>
       <p>
-        Om koden saknas behövs kvittot från Stripe. Ange Checkout Session-id (börjar med cs_) eller
-        Payment Intent-id (börjar med pi_) från kvittot. Vi kan inte återställa förbrukade bilder.
+        If the code is missing you need the Stripe receipt. Send the Checkout Session id (starts
+        with cs_) or Payment Intent id (starts with pi_) from the receipt. We can’t restore used
+        photos.
       </p>
       <p>
-        Tekniska fel och ogiltiga foton drar inte en bild. Spara och dela samma resultat är alltid
-        gratis.
+        Technical errors and invalid photos don’t use a credit. Saving and sharing the same result
+        is always free.
       </p>
     </LegalPage>
   );

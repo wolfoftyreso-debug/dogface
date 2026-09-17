@@ -122,7 +122,7 @@ export async function startCheckout() {
   } else {
     fields["line_items[0][price_data][currency]"] = "usd";
     fields["line_items[0][price_data][unit_amount]"] = String(PACK_CENTS);
-    fields["line_items[0][price_data][product_data][name]"] = "5 hundbilder";
+    fields["line_items[0][price_data][product_data][name]"] = "5 dog photos";
   }
   try {
     const session = await stripeForm("checkout/sessions", fields, `co_${visitorId}_${Date.now()}`);
@@ -157,7 +157,7 @@ export async function restoreWithCode(code: string) {
     return { ok: false as const, message: ERROR_MESSAGES.rate_limit };
   }
   const found = await restoreByCode(code);
-  if (!found) return { ok: false as const, message: "Koden hittades inte. Kontrollera den och prova igen." };
+  if (!found) return { ok: false as const, message: "Code not found. Check it and try again." };
   await ensureVisitor();
   await attachCookieToVisitor(found.id);
   return {
@@ -182,7 +182,7 @@ export async function deliverCheckoutSession(
     return { ok: false, message: ERROR_MESSAGES.payment_failed };
   }
   if (expectedVisitorId && expectedVisitorId !== visitorId) {
-    return { ok: false, message: "Det här köpet tillhör en annan session." };
+    return { ok: false, message: "This purchase belongs to another session." };
   }
   const amount = Number(session.amount_total ?? 0);
   const currency = String(session.currency ?? "");

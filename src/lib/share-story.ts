@@ -9,9 +9,9 @@ const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
 };
 
 export const SHARE_SAVED_HINT: Record<Exclude<StoryTarget, "system">, string> = {
-  instagram: "Instagram öppnas. Välj story-bilden i rullen.",
-  snapchat: "Snapchat öppnas. Välj story-bilden i rullen.",
-  facebook: "Facebook öppnas. Välj story-bilden i rullen.",
+  instagram: "Instagram is opening. Pick the story photo from your camera roll.",
+  snapchat: "Snapchat is opening. Pick the story photo from your camera roll.",
+  facebook: "Facebook is opening. Pick the story photo from your camera roll.",
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -85,7 +85,7 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
 
   ctx.fillStyle = "#8a4e32";
   ctx.font = "600 28px ui-sans-serif, system-ui, sans-serif";
-  const caption = wrapText(ctx, `Hälften jag, hälften ${breed}.`, width - pad * 2);
+  const caption = wrapText(ctx, `Half me, half ${breed}.`, width - pad * 2);
   caption.forEach((line, index) => {
     ctx.fillText(line, width / 2, cardY + card + 140 + index * 36);
   });
@@ -153,8 +153,8 @@ export async function shareStory(opts: {
   const file = new File([blob], opts.filename.replace(/\.jpe?g$/i, "") + "-story.jpg", {
     type: "image/jpeg",
   });
-  const title = "Titta vad lik jag blev";
-  const text = `Hälften jag, hälften ${opts.breed}.`;
+  const title = "Look how alike I got";
+  const text = `Half me, half ${opts.breed}.`;
 
   if (opts.target === "system") {
     return nativeShare(file, title, text);

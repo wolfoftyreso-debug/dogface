@@ -19,7 +19,7 @@ export function RestoreDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <button type="button" className="absolute inset-0 bg-fg/40" aria-label="Stäng" onClick={onClose} />
+      <button type="button" className="absolute inset-0 bg-fg/40" aria-label="Close" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
@@ -27,9 +27,9 @@ export function RestoreDialog({
         className="pay-sheet relative mb-[max(1rem,env(safe-area-inset-bottom))] w-full max-w-md rounded-3xl bg-surface p-6 text-fg shadow-lg ring-1 ring-border sm:mb-0"
       >
         <h2 id="restore-title" className="font-display text-2xl tracking-tight">
-          Återställ köp
+          Restore purchase
         </h2>
-        <p className="mt-2 text-sm text-muted">Ange koden från köpet.</p>
+        <p className="mt-2 text-sm text-muted">Enter the code from your purchase.</p>
         <input
           value={code}
           onChange={(event) => setCode(event.target.value)}
@@ -58,17 +58,17 @@ export function RestoreDialog({
                   }
                   onRestored(result.remaining);
                 } catch {
-                  setError("Kunde inte återställa just nu.");
+                  setError("Couldn’t restore right now.");
                 } finally {
                   setBusy(false);
                 }
               })();
             }}
           >
-            Återställ
+            Restore
           </Button>
           <Button variant="ghost" onClick={onClose}>
-            Avbryt
+            Cancel
           </Button>
         </div>
       </div>

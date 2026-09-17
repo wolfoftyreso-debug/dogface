@@ -16,7 +16,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content: "Lägg till ett foto. Vi gör en bild som är hälften du, hälften hund. Första bilden är gratis.",
+        content: "Add a photo. We make an image that’s half you, half dog. The first one is free.",
       },
       { name: "theme-color", content: "#ff4d2e" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -37,7 +37,7 @@ export const Route = createRootRoute({
     ],
   }),
   component: () => (
-    <html lang="sv" className="antialiased" suppressHydrationWarning>
+    <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

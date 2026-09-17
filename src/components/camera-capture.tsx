@@ -195,7 +195,7 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
   }
 
   return (
-    <div className="camera-sheet" role="dialog" aria-label="Kamera" aria-modal="true">
+    <div className="camera-sheet" role="dialog" aria-label="Camera" aria-modal="true">
       <div className="camera-stage">
         <video
           ref={videoRef}
@@ -205,7 +205,7 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
           autoPlay
         />
         {!ready ? (
-          <p className="camera-waiting">Startar kamera …</p>
+          <p className="camera-waiting">Starting camera …</p>
         ) : null}
         <div className="camera-guide" aria-hidden="true">
           <div className="camera-guide-oval" />
@@ -217,7 +217,7 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
           type="button"
           className="camera-icon-btn justify-self-start"
           onClick={onClose}
-          aria-label="Stäng kamera"
+          aria-label="Close camera"
         >
           <X className="size-5" strokeWidth={2} />
         </button>
@@ -226,14 +226,14 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
           className="camera-shutter justify-self-center disabled:opacity-50"
           onClick={() => void takePhoto()}
           disabled={!ready || busy}
-          aria-label="Ta foto"
+          aria-label="Take photo"
         />
         <button
           type="button"
           className="camera-icon-btn justify-self-end"
           onClick={flipCamera}
           disabled={!ready || busy}
-          aria-label={previewFacing === "user" ? "Vänd till bakre kamera" : "Vänd till selfie"}
+          aria-label={previewFacing === "user" ? "Switch to back camera" : "Switch to selfie"}
         >
           <SwitchCamera className="size-5" strokeWidth={1.75} />
         </button>

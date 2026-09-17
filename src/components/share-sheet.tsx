@@ -24,29 +24,29 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
       if (result === "saved") {
         onHint(
           target === "system"
-            ? "Story-bilden är sparad. Öppna appen och välj den i rullen."
+            ? "Story photo saved. Open the app and pick it from your camera roll."
             : SHARE_SAVED_HINT[target],
         );
       }
       onClose();
     } catch {
-      onHint("Kunde inte dela. Spara bilden i stället.");
+      onHint("Couldn’t share. Save the photo instead.");
     }
   }
 
   return (
-    <div className="share-sheet" role="dialog" aria-label="Dela till story" aria-modal="true">
-      <button type="button" className="share-dismiss" aria-label="Stäng" onClick={onClose} />
+    <div className="share-sheet" role="dialog" aria-label="Share to story" aria-modal="true">
+      <button type="button" className="share-dismiss" aria-label="Close" onClick={onClose} />
       <div className="share-card">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl tracking-tight">Dela</h2>
+            <h2 className="font-display text-2xl tracking-tight">Share</h2>
           </div>
           <button
             type="button"
             className="flex size-11 items-center justify-center rounded-lg text-fg"
             onClick={onClose}
-            aria-label="Stäng"
+            aria-label="Close"
           >
             <X className="size-5" strokeWidth={1.75} />
           </button>
@@ -64,7 +64,7 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
             <Facebook className="size-4" strokeWidth={1.75} />
             Facebook
           </Button>
-          <Button onClick={() => void post("system")}>Andra appar</Button>
+          <Button onClick={() => void post("system")}>Other apps</Button>
         </div>
       </div>
     </div>
