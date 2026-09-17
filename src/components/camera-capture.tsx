@@ -183,7 +183,7 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
         canvas.toBlob(resolve, "image/jpeg", 0.84),
       );
       if (!blob) return;
-      onCapture(new File([blob], "kamera.jpg", { type: "image/jpeg" }));
+      onCapture(new File([blob], "camera.jpg", { type: "image/jpeg" }));
     } finally {
       setBusy(false);
     }

@@ -203,7 +203,7 @@ export const ANALYSIS_SYSTEM_PROMPT = [
   "COLOR: irisColor becomes the dog iris. Hair pigment becomes coat. Accent colors tint furnishings.",
   "skinTone, irisColor, accentColors, hairTexture: short precise English locks. Empty only if not visible.",
   "identityAnchors: 5-10 of the person's most distinctive visible features including at least eye color, eye spacing, expression, and hair texture when visible.",
-  "reason: one short clear sentence in Swedish naming the visual likeness. Max 160 characters.",
+  "reason: one short clear sentence in English naming the visual likeness. Max 160 characters.",
   "renderBrief: dense English spec for a CAMERA photograph of THIS WHOLE PERSON as a real dog of THIS BREED — full canine anatomy, same pose and clothes. Must name iris color, IPD, expression, undertone, hair texture, and accent colors. Not a split. Not a collage.",
 ].join(" ");
 

@@ -51,25 +51,13 @@ export async function savePhoto(dataUrl: string, filename: string): Promise<Save
   const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
   const apple = isAppleTouch();
 
-  if (apple && typeof navigator.share === "function") {
-    const payload = { files: [file], title: filename };
-    const canFiles = typeof navigator.canShare !== "function" || navigator.canShare(payload);
-    if (canFiles) {
-      try {
-        await navigator.share(payload);
-        return { ok: true, mode: "shared" };
-      } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") {
-          return { ok: false, aborted: true };
-        }
-      }
-    }
+  if (apple) {
+    const shared = await sharePhotoFile(file);
+    if (shared === "shared") return { ok: true, mode: "shared" };
+    if (shared === "aborted") return { ok: false, aborted: true };
+    return { ok: true, mode: "press", objectUrl: URL.createObjectURL(blob) };
   }
 
-  if (!apple) {
-    triggerDownload(blob, filename);
-    return { ok: true, mode: "downloaded" };
-  }
-
-  return { ok: true, mode: "press", objectUrl: URL.createObjectURL(blob) };
+  triggerDownload(blob, filename);
+  return { ok: true, mode: "downloaded" };
 }

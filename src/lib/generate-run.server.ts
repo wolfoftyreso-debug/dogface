@@ -220,7 +220,7 @@ async function finishDbJob(
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "no_human" });
       if (moved) await releaseCredit(visitorId, kind);
       const latest = await getVisitorById(visitorId);
-      return fail("no_human", latest ? remainingOf(latest) : 1);
+      return fail("no_human", latest ? remainingOf(latest) : 0);
     }
     if (analysis.subjectSelection === "ambiguous") {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "ambiguous" });

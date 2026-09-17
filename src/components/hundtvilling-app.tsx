@@ -14,14 +14,14 @@ import {
 } from "@/lib/history";
 import { PhotoError, PHOTO_ACCEPT, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
 import { savePhoto } from "@/lib/save-photo";
-import { stampBrand, stampBrandAll } from "@/lib/stamp-brand";
+import { stampBrandAll } from "@/lib/stamp-brand";
 import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
 import { FetchPlay } from "@/components/fetch-play";
 
-const GENERATE_WAIT_MS = 180_000;
+const GENERATE_WAIT_MS = 240_000;
 const JOB_KEY = "ht_job_id";
 const EAT_MS = 1350;
 
@@ -106,23 +106,30 @@ export function HundtvillingApp() {
     const sessionId = typeof search.checkout === "string" ? search.checkout : "";
     if (!sessionId) return;
     void (async () => {
-      const result = await confirmCheckout({ data: { sessionId } });
-      await navigate({ search: {}, replace: true });
-      if (!result.ok) {
-        setError(result.message);
-        return;
-      }
-      setRemaining(result.remaining);
-      setFreeRemaining(0);
-      if (result.restoreCode) setRestoreCode(result.restoreCode);
-      const draft = await loadDraft();
-      if (draft) {
-        setPreview(draft);
-        setPaidNotice("Done. Tap Create.");
-        setError(null);
-      } else {
-        setPaidNotice("Done. Choose the photo again.");
-        setError(null);
+      try {
+        const result = await confirmCheckout({ data: { sessionId } });
+        await navigate({ search: {}, replace: true });
+        if (!result.ok) {
+          setError(result.message);
+          setPaidNotice("If you paid, open Info and Restore purchase.");
+          return;
+        }
+        setRemaining(result.remaining);
+        setFreeRemaining(0);
+        if (result.restoreCode) setRestoreCode(result.restoreCode);
+        const draft = await loadDraft();
+        if (draft) {
+          setPreview(draft);
+          setPaidNotice("Done. Tap Create.");
+          setError(null);
+        } else {
+          setPaidNotice("Done. Choose the photo again.");
+          setError(null);
+        }
+      } catch {
+        await navigate({ search: {}, replace: true });
+        setPaidNotice("If you paid, open Info and Restore purchase.");
+        setError("Couldn’t confirm payment.");
       }
     })();
   }, [search.checkout, navigate]);
@@ -235,18 +242,27 @@ export function HundtvillingApp() {
     setPlayMode("fetch");
     setWorkStep("paint");
     setError(null);
+    let delivered = false;
     try {
       const peek = await getGeneration({ data: { id: requestId } });
       if (peek.ok && peek.status === "ready") {
         await finishWithEat();
-        await applyReady(peek);
+        delivered = await applyReady(peek);
+        if (!delivered) setError(ERROR_MESSAGES.timeout);
         return;
       }
-      if (!peek.ok) return;
+      if (!peek.ok) {
+        setError(peek.message);
+        return;
+      }
       const response = await pollUntilReady(requestId);
-      if (response.ok) {
+      if (response.ok && response.status === "ready") {
         await finishWithEat();
-        if (await applyReady(response)) return;
+        delivered = await applyReady(response);
+        if (!delivered) setError(ERROR_MESSAGES.timeout);
+        return;
+      }
+      if (response.ok) {
         setError(ERROR_MESSAGES.timeout);
         return;
       }
@@ -255,7 +271,7 @@ export function HundtvillingApp() {
     } catch {
       setError(ERROR_MESSAGES.failed);
     } finally {
-      jobKey(null);
+      if (delivered) jobKey(null);
       inFlight.current = false;
       setWorking(false);
     }
@@ -273,43 +289,58 @@ export function HundtvillingApp() {
     const requestId = crypto.randomUUID();
     jobKey(requestId);
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 2500);
+    let jobId: string = requestId;
+    let delivered = false;
     try {
       const started = await generateDogTwin({ data: { image, requestId, style: "dog" } });
       let response = started;
-      const jobId = response.ok ? response.id : requestId;
+      jobId = response.ok ? response.id : requestId;
       jobKey(jobId);
       if (response.ok && response.status !== "ready") {
         response = await pollUntilReady(jobId);
-      } else if (!response.ok && response.code === "failed") {
+      } else if (!response.ok) {
         const peek = await getGeneration({ data: { id: jobId } });
-        if (peek.ok && peek.status !== "ready") {
-          response = await pollUntilReady(jobId);
-        }
-      } else if (!response.ok && response.code === "busy") {
-        const peek = await getGeneration({ data: { id: jobId } });
-        if (peek.ok && peek.status !== "ready") {
+        if (peek.ok && peek.status === "ready") {
+          response = peek;
+        } else if (peek.ok) {
           response = await pollUntilReady(jobId);
         }
       }
-      if (!response || !response.ok) {
-        if (response && !response.ok) {
-          setError(response.message);
-          if (typeof response.remaining === "number") setRemaining(response.remaining);
-        } else {
-          setError(ERROR_MESSAGES.timeout);
-        }
+      if (response.ok && response.status === "ready") {
+        await finishWithEat();
+        delivered = await applyReady(response);
+        if (!delivered) setError(ERROR_MESSAGES.timeout);
         return;
       }
-      await finishWithEat();
-      if (!(await applyReady(response))) {
+      if (response.ok) {
         setError(ERROR_MESSAGES.timeout);
+        return;
       }
+      setError(response.message);
+      if (typeof response.remaining === "number") setRemaining(response.remaining);
     } catch (err) {
+      try {
+        const peek = await getGeneration({ data: { id: jobId } });
+        if (peek.ok && peek.status === "ready") {
+          await finishWithEat();
+          delivered = await applyReady(peek);
+          if (delivered) return;
+        } else if (peek.ok) {
+          const polled = await pollUntilReady(jobId);
+          if (polled.ok && polled.status === "ready") {
+            await finishWithEat();
+            delivered = await applyReady(polled);
+            if (delivered) return;
+          }
+        }
+      } catch {
+        // still report the original failure
+      }
       const timedOut = err instanceof Error && err.message === "timeout";
       setError(timedOut ? ERROR_MESSAGES.timeout : ERROR_MESSAGES.failed);
     } finally {
       window.clearTimeout(paintTimer);
-      jobKey(null);
+      if (delivered) jobKey(null);
       inFlight.current = false;
       setWorking(false);
     }
@@ -359,7 +390,7 @@ export function HundtvillingApp() {
     setSaving(true);
     setShareHint(null);
     try {
-      const result = await savePhoto(await stampBrand(displayedImage(item)), filenameForBreed(item.breed));
+      const result = await savePhoto(displayedImage(item), filenameForBreed(item.breed));
       if (!result.ok) return;
       if (result.mode === "downloaded") setShareHint("Photo saved.");
       if (result.mode === "press") setSavePressUrl(result.objectUrl);
@@ -445,7 +476,7 @@ export function HundtvillingApp() {
               <div>
                 <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
               </div>
-              {isLatest && item.splitDataUrl && item.dogDataUrl ? (
+              {isLatest && item.splitDataUrl && item.dogDataUrl && item.dogDataUrl !== item.splitDataUrl ? (
                 <div className="style-toggle" role="radiogroup" aria-label="Photo style">
                   <button
                     type="button"
@@ -526,7 +557,7 @@ export function HundtvillingApp() {
             <p className="text-base font-medium">
               {playMode === "eat" ? "Gotcha." : workStep === "read" ? "Reading the photo …" : "Making your dog …"}
             </p>
-            {playMode === "fetch" ? <p className="text-sm text-muted">About 20 seconds.</p> : null}
+            {playMode === "fetch" ? <p className="text-sm text-muted">Usually about a minute.</p> : null}
           </div>
         ) : null}
 

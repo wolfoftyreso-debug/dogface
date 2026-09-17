@@ -166,7 +166,7 @@ export async function expireStaleJobs(): Promise<void> {
     set status = 'expired', updated_at = now()
     where (
         status in ('analyzing', 'generating')
-        and created_at < now() - interval '2 minutes'
+        and created_at < now() - interval '5 minutes'
       )
       or status = 'reserved'
     returning id, visitor_id, reserved_kind
