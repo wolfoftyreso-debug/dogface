@@ -24,7 +24,7 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
       if (result === "saved") {
         onHint(
           target === "system"
-            ? "Story photo saved. Open the app and pick it from your camera roll."
+            ? "Story photo saved. Open the app and pick it from Recents."
             : SHARE_SAVED_HINT[target],
         );
       }
