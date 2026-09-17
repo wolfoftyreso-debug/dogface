@@ -1,0 +1,88 @@
+{
+  "appName": "Dogg Style",
+  "subtitle": "Your photo. Half dog.",
+  "bundleId": "app.doggstyle.ios",
+  "sku": "doggstyle-ios",
+  "primaryLanguage": "en-US",
+  "category": {
+    "primary": "Photo & Video",
+    "secondary": "Entertainment"
+  },
+  "devices": "iPhone only (no iPad)",
+  "ageRating": "12+",
+  "ageRatingAnswers": {
+    "madeForKids": false,
+    "cartoonFantasyViolence": "Infrequent/Mild",
+    "realisticViolence": "None",
+    "profanity": "None",
+    "matureSuggestive": "None",
+    "horrorFear": "None",
+    "medicalTreatment": "None",
+    "alcoholTobaccoDrugs": "None",
+    "gambling": "None",
+    "unrestrictedWebAccess": false,
+    "userGeneratedContent": true,
+    "advertising": false
+  },
+  "pricing": "Free, with optional $2.99 In-App Purchase",
+  "iap": {
+    "productId": "com.doggstyle.pack5",
+    "type": "Consumable",
+    "displayName": "5 dog photos",
+    "description": "Five extra Dogg Style photos. Credits do not expire. Invalid photos and errors do not use a credit.",
+    "price": "USD 2.99",
+    "reviewScreenshot": "Use 04-result or a StoreKit product screenshot of the pack."
+  },
+  "urls": {
+    "privacy": "https://YOUR-DOMAIN/privacy",
+    "support": "https://YOUR-DOMAIN/support",
+    "marketing": "https://YOUR-DOMAIN/"
+  },
+  "description": "Add a photo. Dogg Style makes a picture that’s half you, half dog.\n\nThe first one is free. After that, buy five more for $2.99 — a one-time In-App Purchase, not a subscription.\n\n• Take a selfie or pick a photo\n• We send it to our AI only to make your result\n• Save and share with a Dogg Style mark\n• Restore purchases in Info\n• Clear photos stored on this phone anytime\n\nEntertainment only. Not a scientific or medical result. Not for children under 13.\n\nCamera is optional. You can pick a library photo instead. We don’t post your photo publicly, we don’t use it for ads, and we don’t sell it.",
+  "keywords": "dog,selfie,photo,ai,portrait,pet,fun,filter,camera,twin",
+  "promotionalText": "First dog photo is free. Five more for $2.99 — no subscription.",
+  "whatsNew": "First App Store release. Apple In-App Purchase for extra photos, restore, and on-device photo deletion.",
+  "reviewNotes": "No login. First generation is free — please use Camera or Photo, then Create. Extra photos are a $2.99 consumable IAP (com.doggstyle.pack5). Restore is under Info. Website Stripe checkout is not used in this iOS binary. Support: Info → Support, or the Support URL. Demo photo is not required; any clear photo of one person works.",
+  "exportCompliance": {
+    "usesNonExemptEncryption": false,
+    "ITSAppUsesNonExemptEncryption": false
+  },
+  "privacyNutrition": {
+    "tracking": false,
+    "photos": {
+      "purpose": "App Functionality",
+      "linkedToIdentity": false,
+      "usedToTrack": false,
+      "usedFor": "Sent to our AI provider (xAI) to generate the dog portrait. Not posted publicly."
+    },
+    "purchases": {
+      "purpose": "App Functionality",
+      "linkedToIdentity": false,
+      "usedToTrack": false
+    },
+    "identifiers": {
+      "type": "User ID (anonymous session)",
+      "purpose": "App Functionality",
+      "linkedToIdentity": false,
+      "usedToTrack": false
+    }
+  },
+  "screenshots": {
+    "iphone69": [
+      "native/ios/screenshots/01-home-1320x2868.jpg",
+      "native/ios/screenshots/02-photo-1320x2868.jpg",
+      "native/ios/screenshots/03-fetch-1320x2868.jpg",
+      "native/ios/screenshots/04-result-1320x2868.jpg",
+      "native/ios/screenshots/05-restore-1320x2868.jpg"
+    ],
+    "spec": "1320x2868 JPEG, sRGB, no alpha. Apple scales to smaller iPhone sizes."
+  },
+  "icon": "native/ios/AppIcon-1024.png",
+  "stillRequiredOutsideThisRepo": [
+    "Apple Developer Program ($99/year)",
+    "Xcode on a Mac: npx cap add ios, copy native/ios/IapPlugin.swift, Info-usage.plist keys, PrivacyInfo.xcprivacy, DoggStyle.storekit",
+    "App Store Connect: create IAP com.doggstyle.pack5 as Consumable $2.99",
+    "Replace YOUR-DOMAIN in privacy/support URLs with the live site",
+    "Archive and submit from Xcode"
+  ]
+}
