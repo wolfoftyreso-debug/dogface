@@ -13,7 +13,6 @@ import {
   saveHistoryItem,
 } from "@/lib/history";
 import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
-import { blendSplitPortrait } from "@/lib/split-blend";
 import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
@@ -51,7 +50,6 @@ export function HundtvillingApp() {
   const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
   const [style, setStyle] = useState<PortraitStyle>("dog");
   const [infoOpen, setInfoOpen] = useState(false);
-  const [splitUrls, setSplitUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     void listHistory().then(setHistory).catch(() => undefined);
@@ -96,18 +94,6 @@ export function HundtvillingApp() {
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "smooth" });
   }, [history, preview, working, latest, error]);
-
-  useEffect(() => {
-    if (!latest?.sourceDataUrl || splitUrls[latest.id]) return;
-    const id = latest.id;
-    const source = latest.sourceDataUrl;
-    const dog = latest.imageDataUrl;
-    void blendSplitPortrait(source, dog)
-      .then((url) => {
-        setSplitUrls((current) => (current[id] ? current : { ...current, [id]: url }));
-      })
-      .catch(() => undefined);
-  }, [latest, splitUrls]);
 
   const canGenerate = Boolean(preview) && !working;
   const primaryLabel = remaining === 0 ? "Köp 2,99 USD" : "Skapa";
@@ -208,9 +194,10 @@ export function HundtvillingApp() {
         reason: response.reason,
         imageDataUrl: response.imageDataUrl,
         sourceDataUrl: image,
+        splitDataUrl: response.splitDataUrl,
       };
       setLatest(item);
-      setStyle("dog");
+      setStyle(response.splitDataUrl ? "split" : "dog");
       setRemaining(response.remaining);
       setFreeRemaining(0);
       setPreview(null);
@@ -263,22 +250,15 @@ export function HundtvillingApp() {
     await runGeneration(preview);
   }
 
-  async function displayedImage(item: HistoryItem): Promise<string> {
+  function displayedImage(item: HistoryItem): string {
     const isLatest = item.id === latest?.id;
-    if (!isLatest || style !== "split" || !item.sourceDataUrl) return item.imageDataUrl;
-    if (splitUrls[item.id]) return splitUrls[item.id];
-    try {
-      const url = await blendSplitPortrait(item.sourceDataUrl, item.imageDataUrl);
-      setSplitUrls((current) => ({ ...current, [item.id]: url }));
-      return url;
-    } catch {
-      return item.imageDataUrl;
-    }
+    if (isLatest && style === "split" && item.splitDataUrl) return item.splitDataUrl;
+    return item.imageDataUrl;
   }
 
   async function saveImage(item: HistoryItem) {
     try {
-      const dataUrl = await displayedImage(item);
+      const dataUrl = displayedImage(item);
       const res = await fetch(dataUrl);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -294,9 +274,8 @@ export function HundtvillingApp() {
     }
   }
 
-  async function openShare(item: HistoryItem) {
-    const imageDataUrl = await displayedImage(item);
-    setShareItem({ ...item, imageDataUrl });
+  function openShare(item: HistoryItem) {
+    setShareItem({ ...item, imageDataUrl: displayedImage(item) });
   }
 
   const shown = latest ? [latest, ...history.filter((item) => item.id !== latest.id)] : history;
@@ -329,8 +308,8 @@ export function HundtvillingApp() {
             <div className="min-h-0 flex-1 overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
               <div className="photo-hero is-fill">
                 <img
-                  src="/hero-dog.jpg"
-                  alt="Exempel: hela personen som en hund"
+                  src="/hero-split.jpg"
+                  alt="Exempel: personen smälter ihop med hunden"
                   className="size-full object-cover"
                 />
               </div>
@@ -344,27 +323,19 @@ export function HundtvillingApp() {
           .reverse()
           .map((item) => {
             const isLatest = item.id === (latest?.id ?? shown[0]?.id);
-            const fused = isLatest && style === "split" ? splitUrls[item.id] : undefined;
-            const showSplit = isLatest && style === "split" && Boolean(item.sourceDataUrl) && !fused;
-            const shownUrl = fused || item.imageDataUrl;
+            const shownUrl =
+              isLatest && style === "split" && item.splitDataUrl ? item.splitDataUrl : item.imageDataUrl;
             return (
             <article key={item.id} className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
-                <div className={showSplit ? "photo-square split-morph" : "photo-square"}>
-                  {showSplit ? (
-                    <img src={item.sourceDataUrl} alt="" className="is-human" />
-                  ) : null}
-                  <img
-                    src={showSplit ? item.imageDataUrl : shownUrl}
-                    alt={`En ${item.breed}`}
-                    className={showSplit ? "is-dog size-full object-contain" : "size-full object-contain"}
-                  />
+                <div className="photo-square">
+                  <img src={shownUrl} alt={`En ${item.breed}`} className="size-full object-contain" />
                 </div>
               </div>
               <div>
                 <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
               </div>
-              {isLatest && item.sourceDataUrl ? (
+              {isLatest && item.splitDataUrl ? (
                 <div className="style-toggle" role="radiogroup" aria-label="Bildstil">
                   <button
                     type="button"
@@ -391,7 +362,7 @@ export function HundtvillingApp() {
                   <Download className="size-4" strokeWidth={1.75} />
                   Spara
                 </Button>
-                <Button variant="secondary" onClick={() => void openShare(item)} aria-label="Dela till story">
+                <Button variant="secondary" onClick={() => openShare(item)} aria-label="Dela till story">
                   <Share2 className="size-4" strokeWidth={1.75} />
                   Dela
                 </Button>

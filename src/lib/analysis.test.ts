@@ -192,9 +192,12 @@ describe("generation prompt", () => {
     const parsed = parseAnalysis(valid);
     assert.ok(parsed);
     const prompt = buildGenerationPrompt(parsed, "", "split");
-    assert.match(prompt, /fused morph/i);
-    assert.match(prompt, /not a collage/i);
+    assert.match(prompt, /mid-metamorphosis/i);
+    assert.match(prompt, /single-exposure/i);
+    assert.match(prompt, /one nose/i);
+    assert.match(prompt, /cannot find a cut/i);
     assert.doesNotMatch(prompt, /exact vertical midline/i);
+    assert.doesNotMatch(prompt, /LEFT HALF/i);
     assert.doesNotMatch(prompt, /WHOLE SUBJECT IS A DOG/i);
   });
 });

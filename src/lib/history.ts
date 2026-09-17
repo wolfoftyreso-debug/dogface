@@ -22,7 +22,9 @@ export function isHistoryItem(value: unknown): value is HistoryItem {
     typeof item.imageDataUrl === "string" &&
     item.imageDataUrl.startsWith("data:image/") &&
     (item.sourceDataUrl === undefined ||
-      (typeof item.sourceDataUrl === "string" && item.sourceDataUrl.startsWith("data:image/")))
+      (typeof item.sourceDataUrl === "string" && item.sourceDataUrl.startsWith("data:image/"))) &&
+    (item.splitDataUrl === undefined ||
+      (typeof item.splitDataUrl === "string" && item.splitDataUrl.startsWith("data:image/")))
   );
 }
 

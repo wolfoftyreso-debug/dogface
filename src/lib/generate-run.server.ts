@@ -27,6 +27,7 @@ import {
   type Visitor,
 } from "./session.server";
 import { env } from "./env.server.ts";
+import { packPortraits, unpackPortraits } from "./result-pack";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult, type PortraitStyle } from "./types";
 
 function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
@@ -59,6 +60,7 @@ type MemJob = {
   breed: string;
   reason: string;
   imageDataUrl: string;
+  splitDataUrl?: string;
   errorCode: GenerateErrorCode | "";
   remaining: number;
 };
@@ -71,6 +73,31 @@ function memJobs(): Map<string, MemJob> {
 
 function pending(id: string, remaining: number): GenerateResult {
   return { ok: true, id, status: "analyzing", remaining };
+}
+
+function readyResult(
+  id: string,
+  portraits: { dog: string; split?: string },
+  breed: string,
+  reason: string,
+  remaining: number,
+): GenerateResult {
+  return {
+    ok: true,
+    id,
+    status: "ready",
+    breed,
+    reason,
+    imageDataUrl: portraits.dog,
+    splitDataUrl: portraits.split,
+    remaining,
+  };
+}
+
+function readyFromPacked(id: string, raw: string, breed: string, reason: string, remaining: number): GenerateResult {
+  const portraits = unpackPortraits(raw);
+  if (!portraits) return fail("failed", remaining);
+  return readyResult(id, portraits, breed, reason, remaining);
 }
 
 export async function runDogTwin(
@@ -101,15 +128,13 @@ export async function runDogTwin(
     if (existing.payloadHash !== payloadHash) return fail("failed", remainingOf(visitor));
     if (existing.status === "ready" || existing.status === "delivered") {
       if (!existing.resultData) return fail("failed", remainingOf(visitor));
-      return {
-        ok: true,
-        id: existing.id,
-        status: "ready",
-        breed: existing.breedName || "",
-        reason: existing.reason || "",
-        imageDataUrl: existing.resultData,
-        remaining: remainingOf(visitor),
-      };
+      return readyFromPacked(
+        existing.id,
+        existing.resultData,
+        existing.breedName || "",
+        existing.reason || "",
+        remainingOf(visitor),
+      );
     }
     if (existing.status === "rejected") {
       return fail((existing.errorCode as GenerateErrorCode) || "no_human", remainingOf(visitor));
@@ -138,15 +163,13 @@ export async function runDogTwin(
     const raced = await getJob(requestId, visitor.id);
     const latest = await getVisitorById(visitor.id);
     if (raced?.resultData) {
-      return {
-        ok: true,
-        id: raced.id,
-        status: "ready",
-        breed: raced.breedName || "",
-        reason: raced.reason || "",
-        imageDataUrl: raced.resultData,
-        remaining: latest ? remainingOf(latest) : remainingOf(visitor),
-      };
+      return readyFromPacked(
+        raced.id,
+        raced.resultData,
+        raced.breedName || "",
+        raced.reason || "",
+        latest ? remainingOf(latest) : remainingOf(visitor),
+      );
     }
     return fail("busy", remainingOf(visitor));
   }
@@ -178,7 +201,7 @@ async function finishDbJob(
   kind: "free" | "paid",
 ): Promise<GenerateResult> {
   try {
-    const { analyzePhoto, produceIdentityDog, AppError } = await import("./xai.server.ts");
+    const { analyzePhoto, producePortraits, AppError } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "no_human" });
@@ -204,26 +227,18 @@ async function finishDbJob(
       breedName: analysis.breedName,
       reason: analysis.reason,
     });
-    const imageDataUrl = await produceIdentityDog(image, analysis, "dog");
+    const portraits = await producePortraits(image, analysis);
     const marked = await setJobStatus(requestId, "ready", {
       breedId: analysis.breedId,
       breedName: analysis.breedName,
       reason: analysis.reason,
-      resultData: imageDataUrl,
+      resultData: packPortraits(portraits),
     });
     if (!marked) return fail("timeout");
     await bumpGenerationCounter();
     const latest = await getVisitorById(visitorId);
-    logJob(`ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
-    return {
-      ok: true,
-      id: requestId,
-      status: "ready",
-      breed: analysis.breedName,
-      reason: analysis.reason,
-      imageDataUrl,
-      remaining: latest ? remainingOf(latest) : 0,
-    };
+    logJob(`ready ${requestId.slice(0, 8)} ${analysis.breedName}${portraits.split ? " +split" : ""}`);
+    return readyResult(requestId, portraits, analysis.breedName, analysis.reason, latest ? remainingOf(latest) : 0);
   } catch (err) {
     const { AppError } = await import("./xai.server.ts");
     const code = err instanceof AppError ? err.code : "failed";
@@ -231,15 +246,13 @@ async function finishDbJob(
     const current = await getJob(requestId, visitorId);
     if (current?.status === "ready" && current.resultData) {
       const latest = await getVisitorById(visitorId);
-      return {
-        ok: true,
-        id: requestId,
-        status: "ready",
-        breed: current.breedName || "",
-        reason: current.reason || "",
-        imageDataUrl: current.resultData,
-        remaining: latest ? remainingOf(latest) : 0,
-      };
+      return readyFromPacked(
+        requestId,
+        current.resultData,
+        current.breedName || "",
+        current.reason || "",
+        latest ? remainingOf(latest) : 0,
+      );
     }
     const moved = await setJobStatus(requestId, "failed", { errorCode: code });
     if (moved) await releaseCredit(visitorId, kind);
@@ -296,7 +309,7 @@ async function finishMemJob(
     writeCookieVisitor(visitor);
   };
   try {
-    const { analyzePhoto, produceIdentityDog, AppError } = await import("./xai.server.ts");
+    const { analyzePhoto, producePortraits, AppError } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
       refund();
@@ -330,27 +343,20 @@ async function finishMemJob(
     }
     const current = memJobs().get(requestId);
     if (current) current.status = "generating";
-    const imageDataUrl = await produceIdentityDog(image, analysis, "dog");
+    const portraits = await producePortraits(image, analysis);
     memJobs().set(requestId, {
       id: requestId,
       visitorId: visitor.id,
       status: "ready",
       breed: analysis.breedName,
       reason: analysis.reason,
-      imageDataUrl,
+      imageDataUrl: portraits.dog,
+      splitDataUrl: portraits.split,
       errorCode: "",
       remaining: remainingOf(visitor),
     });
-    logJob(`mem ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
-    return {
-      ok: true,
-      id: requestId,
-      status: "ready",
-      breed: analysis.breedName,
-      reason: analysis.reason,
-      imageDataUrl,
-      remaining: remainingOf(visitor),
-    };
+    logJob(`mem ready ${requestId.slice(0, 8)} ${analysis.breedName}${portraits.split ? " +split" : ""}`);
+    return readyResult(requestId, portraits, analysis.breedName, analysis.reason, remainingOf(visitor));
   } catch (err) {
     const { AppError } = await import("./xai.server.ts");
     refund();
@@ -375,15 +381,13 @@ export async function readGeneration(id: string): Promise<GenerateResult> {
   const mem = memJobs().get(id);
   if (mem) {
     if (mem.status === "ready") {
-      return {
-        ok: true,
-        id: mem.id,
-        status: "ready",
-        breed: mem.breed,
-        reason: mem.reason,
-        imageDataUrl: mem.imageDataUrl,
-        remaining: mem.remaining,
-      };
+      return readyResult(
+        mem.id,
+        { dog: mem.imageDataUrl, split: mem.splitDataUrl },
+        mem.breed,
+        mem.reason,
+        mem.remaining,
+      );
     }
     if (mem.status === "rejected" || mem.status === "failed") {
       return fail((mem.errorCode as GenerateErrorCode) || "failed", mem.remaining);
@@ -398,15 +402,13 @@ export async function readGeneration(id: string): Promise<GenerateResult> {
   if (job.status === "ready" || job.status === "delivered") {
     if (!job.resultData) return fail("failed", remainingOf(visitor));
     if (job.status === "ready") await markDelivered(id, visitor.id);
-    return {
-      ok: true,
-      id: job.id,
-      status: "ready",
-      breed: job.breedName || "",
-      reason: job.reason || "",
-      imageDataUrl: job.resultData,
-      remaining: remainingOf(visitor),
-    };
+    return readyFromPacked(
+      job.id,
+      job.resultData,
+      job.breedName || "",
+      job.reason || "",
+      remainingOf(visitor),
+    );
   }
   if (job.status === "rejected") {
     return fail((job.errorCode as GenerateErrorCode) || "no_human", remainingOf(visitor));

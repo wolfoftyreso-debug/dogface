@@ -91,13 +91,15 @@ export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", styl
   const split = style === "split";
   const composition = split
     ? [
-        `Regenerate this entire photograph as ONE new camera portrait of this person becoming a real living ${analysis.breedName} (${analysis.breedId}).`,
-        "This is a single fused morph photograph, not a collage, not a split-screen, not a paste, not two images joined.",
-        "Render the WHOLE frame from scratch. Do not keep the original left-side pixels. Do not cut on a vertical midline.",
-        `The subject stays in this pose, crop, clothing, and lighting. Appearance flows continuously from this person on the left into a true ${analysis.breedName} on the right.`,
-        "The transition occupies the central third of the face: skin becomes fur fiber by fiber, the nose becomes canine leather, the ear becomes ear leather. No straight cut, no hard edge, no mismatched lighting.",
-        "Left side still reads as this person. Right side is a real dog with muzzle, nose leather, whisker pads, and ear leather. Center is one skull under one light.",
-        "THIS PERSON AS THIS BREED. The joke is likeness through eyes, gaze, color, and furnishings.",
+        `Regenerate this entire photograph as ONE new photorealistic phone selfie of this person mid-metamorphosis into a real living ${analysis.breedName} (${analysis.breedId}).`,
+        "This is a single-exposure viral half-human half-dog portrait. One camera, one skull, one neck, one shirt, one background, one grain. Not a collage, not a split-screen, not two photos joined, not a dog head pasted onto a human.",
+        "Paint the WHOLE frame from scratch. Do not keep original pixels. Do not draw a straight vertical line. Do not cut on a midline.",
+        "The face is one continuous head in anatomical transformation: this person's real skin, pores, human eye, and ear remain readable on one side of the face; the other side is a true living dog of this breed with a projecting muzzle, wet nose leather, whisker pads, ear leather, and individual fur strands.",
+        "THROUGH THE CENTER the anatomy interpolates: one nose (human nostril becoming a wet canine leather nose at the septum), lips becoming muzzle, skin pores becoming fur fibers, facial hair becoming muzzle furnishings. The join is organic, irregular, and invisible. Zoom in and you still cannot find a cut.",
+        "Hair across the scalp is one continuous hairstyle becoming coat — same volume, same part, same fiber — so the top of the head does not jump.",
+        "This person's clothing continues across the chest unchanged. Background, lamps, walls, color temperature, and photographic grain are identical across the whole frame.",
+        "Both eyes share this person's iris color, gaze direction, and expression. The dog eye sits in a canine lid, not a generic brown dog eye.",
+        "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, color, hair-to-coat, and furnishings.",
       ]
     : [
         `Regenerate this entire photograph as a photorealistic camera portrait of a real living ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
@@ -137,11 +139,11 @@ export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", styl
     "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction from the source photo.",
     "Do not beautify, symmetrize, smile-ify, or replace with studio hero lighting.",
     split
-      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, Photoshop composite, cut-and-paste, visible seam, vertical midline cut, two photos joined, keeping original left-half pixels, collage, text, watermark, logo, extra faces, costume hood."
+      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, Photoshop composite, cut-and-paste, visible seam, vertical line, two photos joined, keeping original pixels on one side, collage, text, watermark, logo, extra faces, costume hood."
       : "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, human skin, human nose, split face, half-and-half, collage, paste, text, watermark, logo, extra faces, costume hood.",
     extra,
     split
-      ? "Square 1:1 head-and-shoulders camera portrait: one fused morph of this person becoming this breed, immediately readable as the same person."
+      ? "Square 1:1 head-and-shoulders phone selfie: one fused anatomical morph of this person becoming this breed, immediately readable as the same person, no cut line."
       : "Square 1:1 head-and-shoulders camera portrait of a real dog, immediately readable as this person as this breed.",
   ]
     .filter((part) => part && part.trim().length > 0)

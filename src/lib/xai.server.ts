@@ -171,3 +171,26 @@ export async function produceIdentityDog(
 ): Promise<string> {
   return generateDogImage(imageDataUrl, analysis, style);
 }
+
+export async function producePortraits(
+  imageDataUrl: string,
+  analysis: AnalysisResult,
+): Promise<{ dog: string; split?: string }> {
+  const [dogResult, splitResult] = await Promise.allSettled([
+    generateDogImage(imageDataUrl, analysis, "dog"),
+    generateDogImage(imageDataUrl, analysis, "split"),
+  ]);
+  if (dogResult.status !== "fulfilled") {
+    throw dogResult.reason;
+  }
+  if (splitResult.status !== "fulfilled") {
+    console.info(
+      "[hundtvilling] split generate skipped",
+      splitResult.reason instanceof Error ? splitResult.reason.message : "error",
+    );
+  }
+  return {
+    dog: dogResult.value,
+    split: splitResult.status === "fulfilled" ? splitResult.value : undefined,
+  };
+}

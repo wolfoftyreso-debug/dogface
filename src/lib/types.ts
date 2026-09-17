@@ -24,6 +24,7 @@ export type HistoryItem = {
   reason: string;
   imageDataUrl: string;
   sourceDataUrl?: string;
+  splitDataUrl?: string;
 };
 
 export const MAX_HISTORY = 10;
@@ -92,6 +93,7 @@ export type GenerateOk = {
   breed: string;
   reason: string;
   imageDataUrl: string;
+  splitDataUrl?: string;
   remaining: number;
 };
 
