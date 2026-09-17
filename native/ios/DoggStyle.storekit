@@ -1,0 +1,30 @@
+{
+  "identifier" : "DoggStyle",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "pack5",
+      "localizations" : [
+        {
+          "description" : "Five extra Dogg Style photos. Credits do not expire.",
+          "displayName" : "5 dog photos",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.doggstyle.pack5",
+      "referenceName" : "Pack of 5 photos",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

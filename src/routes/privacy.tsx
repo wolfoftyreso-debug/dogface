@@ -34,8 +34,9 @@ function PrivacyPage() {
       </p>
       <p>
         <strong className="font-semibold text-fg">Third parties.</strong> xAI processes the photo to
-        generate the image. Stripe processes payment. They must protect that data at least as
-        described here. We do not share photos with advertisers or data brokers.
+        generate the image. Stripe processes website payments. Apple processes In-App Purchases in
+        the iOS app. They must protect that data at least as described here. We do not share photos
+        with advertisers or data brokers.
       </p>
       <p>
         The original photo is not kept permanently on our server. A finished result may be buffered

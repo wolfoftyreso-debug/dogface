@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { restorePurchase } from "@/lib/payment";
+import { confirmAppleIap, restorePurchase } from "@/lib/payment";
+import { isNativeApp, nativeRestorePurchases } from "@/lib/native-platform";
 
 export function RestoreDialog({
   open,
@@ -14,8 +15,35 @@ export function RestoreDialog({
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const native = isNativeApp();
 
   if (!open) return null;
+
+  async function restoreApple() {
+    setBusy(true);
+    setError(null);
+    try {
+      const list = await nativeRestorePurchases();
+      let remaining = 0;
+      let any = false;
+      for (const jws of list) {
+        const result = await confirmAppleIap({ data: { transactionJws: jws } });
+        if (result.ok) {
+          any = true;
+          remaining = result.remaining;
+        }
+      }
+      if (!any) {
+        setError("No Apple purchase to restore. Enter your HT- code if you bought on the website.");
+        return;
+      }
+      onRestored(remaining);
+    } catch {
+      setError("Couldn’t restore right now.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -29,7 +57,16 @@ export function RestoreDialog({
         <h2 id="restore-title" className="font-display text-2xl tracking-tight">
           Restore purchase
         </h2>
-        <p className="mt-2 text-sm text-muted">Enter the code from your purchase.</p>
+        <p className="mt-2 text-sm text-muted">
+          {native
+            ? "Restore an Apple purchase, or enter the HT- code from the website."
+            : "Enter the code from your purchase."}
+        </p>
+        {native ? (
+          <Button className="mt-4" disabled={busy} onClick={() => void restoreApple()}>
+            Restore Apple purchase
+          </Button>
+        ) : null}
         <input
           value={code}
           onChange={(event) => setCode(event.target.value)}

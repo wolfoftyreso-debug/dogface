@@ -29,3 +29,14 @@ export const restorePurchase = createServerFn({ method: "POST" })
     const { restoreWithCode } = await import("./stripe.server.ts");
     return restoreWithCode(data.code);
   });
+
+export const confirmAppleIap = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = input && typeof input === "object" ? (input as { transactionJws?: unknown }) : {};
+    return { transactionJws: typeof raw.transactionJws === "string" ? raw.transactionJws : "" };
+  })
+  .handler(async ({ data }) => {
+    const { confirmAppleTransaction } = await import("./apple-iap.server.ts");
+    return confirmAppleTransaction(data.transactionJws);
+  });
+

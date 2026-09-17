@@ -3,7 +3,8 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Camera, Copy, Download, ImagePlus, Images, Info, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateDogTwin, getGeneration } from "@/lib/generate";
-import { confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
+import { confirmAppleIap, confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
+import { isNativeApp, nativePurchasePack } from "@/lib/native-platform";
 import {
   clearAllLocalPhotos,
   clearDraft,
@@ -194,6 +195,25 @@ export function DoggStyleApp() {
   async function startCheckout() {
     setError(null);
     if (preview) await saveDraft(preview);
+    if (isNativeApp()) {
+      try {
+        const { jws } = await nativePurchasePack();
+        const result = await confirmAppleIap({ data: { transactionJws: jws } });
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        setRemaining(result.remaining);
+        setFreeRemaining(0);
+        if (result.restoreCode) setRestoreCode(result.restoreCode);
+        setPaidNotice("Done. Tap Create.");
+        setError(null);
+      } catch (err) {
+        if (err instanceof Error && /cancel/i.test(err.message)) return;
+        setError(ERROR_MESSAGES.payment_unavailable);
+      }
+      return;
+    }
     try {
       const created = await createCheckout();
       if (!created.ok) {
@@ -636,7 +656,9 @@ export function DoggStyleApp() {
         </Button>
         <p className="mt-2 text-center text-xs text-muted">
           {needsPay
-            ? "Pay on the website with Stripe. Not an App Store purchase."
+            ? isNativeApp()
+              ? "Pay with Apple In-App Purchase. $2.99 for 5 photos."
+              : "Pay on the website with Stripe. Not an App Store purchase."
             : "Create sends this photo to our AI to make your dog."}
         </p>
       </div>

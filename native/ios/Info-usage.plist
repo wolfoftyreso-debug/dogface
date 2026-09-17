@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key>
+  <string>Dogg Style</string>
+  <key>CFBundleName</key>
+  <string>Dogg Style</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Dogg Style uses the camera so you can take a selfie to turn into a dog portrait. The photo is sent to our AI to generate your result and is not posted publicly. You can pick a photo from your library instead.</string>
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>Dogg Style saves your dog portrait to Photos when you tap Save.</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+</dict>
+</plist>
