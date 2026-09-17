@@ -410,18 +410,36 @@ export function HundtvillingApp() {
     setShareItem({ ...item, imageDataUrl: displayedImage(item) });
   }
 
-  const shown = latest ? [latest, ...history.filter((item) => item.id !== latest.id)] : history;
+  function openHistoryItem(item: HistoryItem) {
+    setLatest(item);
+    latestRef.current = item;
+    setStyle(
+      item.splitDataUrl && item.dogDataUrl && item.dogDataUrl !== item.splitDataUrl ? "split" : "dog",
+    );
+    setPreview(null);
+    setShareHint(null);
+  }
+
+  function goHome() {
+    setLatest(null);
+    latestRef.current = null;
+    setPreview(null);
+    setShareHint(null);
+    setError(null);
+  }
+
+  const recents = history.filter((item) => item.id !== latest?.id);
 
   return (
     <main className="app-shell has-dock flex flex-col">
       <header className="flex items-center justify-between gap-3">
-        <div className="brand">
+        <button type="button" className="brand" onClick={goHome} aria-label="Home">
           <img src="/logo-mark.png" alt="" className="brand-mark" />
           <p className="brand-name">
             Dogg
             <em>Style</em>
           </p>
-        </div>
+        </button>
         <div className="flex items-center gap-1">
           {remainingLabel ? (
             <p className="brand-count" aria-label={`${remainingLabel} photos left`}>
@@ -449,34 +467,21 @@ export function HundtvillingApp() {
               </div>
             </div>
             <h1 className="text-center font-display text-3xl tracking-tight">Which dog are you?</h1>
+            {history.length ? <Recents items={history} onPick={openHistoryItem} /> : null}
           </div>
         ) : null}
 
-        {latest
-          ? shown
-          .slice()
-          .reverse()
-          .map((item) => {
-            const isLatest = item.id === (latest?.id ?? shown[0]?.id);
-            const shownUrl =
-              isLatest && style === "split" && item.splitDataUrl
-                ? item.splitDataUrl
-                : isLatest && style === "dog" && item.dogDataUrl
-                  ? item.dogDataUrl
-                  : isLatest && style === "dog" && item.splitDataUrl && item.imageDataUrl !== item.splitDataUrl
-                    ? item.imageDataUrl
-                    : item.imageDataUrl;
-            return (
-            <article key={item.id} className="flex flex-col gap-3">
+        {latest ? (
+            <article className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
                 <div className="photo-square">
-                  <img src={shownUrl} alt={item.breed} className="size-full object-contain" />
+                  <img src={displayedImage(latest)} alt={latest.breed} className="size-full object-contain" />
                 </div>
               </div>
               <div>
-                <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
+                <h2 className="font-display text-2xl tracking-tight">{latest.breed}</h2>
               </div>
-              {isLatest && item.splitDataUrl && item.dogDataUrl && item.dogDataUrl !== item.splitDataUrl ? (
+              {latest.splitDataUrl && latest.dogDataUrl && latest.dogDataUrl !== latest.splitDataUrl ? (
                 <div className="style-toggle" role="radiogroup" aria-label="Photo style">
                   <button
                     type="button"
@@ -501,35 +506,32 @@ export function HundtvillingApp() {
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="secondary"
-                  onClick={() => void saveImage(item)}
+                  onClick={() => void saveImage(latest)}
                   disabled={saving}
                   aria-label="Save photo"
                 >
                   <Download className="size-4" strokeWidth={1.75} />
                   {saving ? "Saving …" : "Save"}
                 </Button>
-                <Button variant="secondary" onClick={() => openShare(item)} aria-label="Share to story">
+                <Button variant="secondary" onClick={() => openShare(latest)} aria-label="Share to story">
                   <Share2 className="size-4" strokeWidth={1.75} />
                   Share
                 </Button>
               </div>
-              {item.id === shown[0]?.id ? (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setShareHint(null);
-                    libraryRef.current?.click();
-                  }}
-                  aria-label="New photo"
-                >
-                  <ImagePlus className="size-4" strokeWidth={1.75} />
-                  New photo
-                </Button>
-              ) : null}
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShareHint(null);
+                  libraryRef.current?.click();
+                }}
+                aria-label="New photo"
+              >
+                <ImagePlus className="size-4" strokeWidth={1.75} />
+                New photo
+              </Button>
+              {recents.length ? <Recents items={recents} onPick={openHistoryItem} /> : null}
             </article>
-            );
-          })
-          : null}
+        ) : null}
 
         {preview ? (
           <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
@@ -676,6 +678,21 @@ export function HundtvillingApp() {
         />
       ) : null}
     </main>
+  );
+}
+
+function Recents({ items, onPick }: { items: HistoryItem[]; onPick: (item: HistoryItem) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="recents-label">Your photos</p>
+      <div className="recents">
+        {items.map((item) => (
+          <button type="button" key={item.id} onClick={() => onPick(item)} aria-label={item.breed}>
+            <img src={item.imageDataUrl} alt="" />
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
