@@ -78,7 +78,7 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
   ctx.fillStyle = "#2a1408";
   ctx.textAlign = "center";
   ctx.font = "700 72px ui-rounded, system-ui, sans-serif";
-  ctx.fillText("Titta vad lik jag blev", width / 2, 280);
+  ctx.fillText("Look how alike I got", width / 2, 280);
 
   ctx.font = '600 42px ui-sans-serif, system-ui, sans-serif';
   ctx.fillText(breed, width / 2, cardY + card + 88);
