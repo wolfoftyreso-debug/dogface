@@ -2,6 +2,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { checkRateLimit, grantPack, restoreByCode, revokePurchase } from "./entitlement.server";
 import { dbConfigured, getSql } from "./db";
 import { env } from "./env.server.ts";
+import { expireStaleJobs } from "./generation.server";
 import { attachCookieToVisitor, clientIp, cookieVisitor, ensureVisitor, getVisitorById, remainingOf } from "./session.server";
 import { verifyStripeSignature } from "./stripe-signature";
 import { ERROR_MESSAGES } from "./types";
@@ -83,6 +84,7 @@ export async function readBalance() {
       aiReady: Boolean(env("XAI_API_KEY")),
     };
   }
+  await expireStaleJobs();
   const visitor = await ensureVisitor();
   return {
     remaining: remainingOf(visitor),

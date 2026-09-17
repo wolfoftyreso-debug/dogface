@@ -169,7 +169,10 @@ export function HundtvillingApp() {
       if (response.ok && response.status !== "ready") {
         response = await pollUntilReady(requestId);
       } else if (!response.ok && response.code === "failed") {
-        response = await pollUntilReady(requestId);
+        const peek = await getGeneration({ data: { id: requestId } });
+        if (peek.ok && peek.status !== "ready") {
+          response = await pollUntilReady(requestId);
+        }
       }
       if (!response || !response.ok) {
         if (response && !response.ok) {
@@ -218,7 +221,7 @@ export function HundtvillingApp() {
       await new Promise((resolve) => window.setTimeout(resolve, 2500));
       last = await getGeneration({ data: { id: requestId } });
       if (last.ok && last.status === "ready") return last;
-      if (!last.ok && last.code !== "failed") return last;
+      if (!last.ok) return last;
     }
     return last ?? { ok: false as const, code: "timeout" as const, message: ERROR_MESSAGES.timeout };
   }

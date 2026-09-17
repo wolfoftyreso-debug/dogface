@@ -11,7 +11,7 @@ export const generateDogTwin = createServerFn({ method: "POST" })
       const { runDogTwin } = await import("./generate-run.server.ts");
       return await runDogTwin(data.image, data.requestId, data.style);
     } catch (err) {
-      console.info("[hundtvilling] generateDogTwin", err instanceof Error ? err.message : "error");
+      console.info("[hundtvilling] generateDogTwin", err instanceof Error ? err.stack || err.message : "error");
       return { ok: false, code: "failed", message: ERROR_MESSAGES.failed };
     }
   });

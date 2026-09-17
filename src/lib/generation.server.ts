@@ -86,11 +86,9 @@ export async function insertReservedJob(input: {
   const sql = await getSql();
   await sql`
     insert into generations (id, visitor_id, payload_hash, status, reserved_kind)
-    values (${input.id}, ${input.visitorId}, ${input.payloadHash}, 'reserved', ${input.reservedKind})
+    values (${input.id}, ${input.visitorId}, ${input.payloadHash}, 'analyzing', ${input.reservedKind})
   `;
 }
-
-const TERMINAL = new Set<JobStatus>(["ready", "rejected", "failed", "expired"]);
 
 export async function setJobStatus(
   id: string,
@@ -104,40 +102,44 @@ export async function setJobStatus(
   },
 ): Promise<boolean> {
   const sql = await getSql();
-  const rows = TERMINAL.has(status)
-    ? await sql<{ id: string }>`
-        update generations
-        set status = ${status},
-            breed_id = coalesce(${extra?.breedId ?? null}, breed_id),
-            breed_name = coalesce(${extra?.breedName ?? null}, breed_name),
-            reason = coalesce(${extra?.reason ?? null}, reason),
-            result_data = coalesce(${extra?.resultData ?? null}, result_data),
-            result_expires_at = case
-              when ${extra?.resultData ?? null} is not null then now() + interval '24 hours'
-              else result_expires_at
-            end,
-            error_code = coalesce(${extra?.errorCode ?? null}, error_code),
-            updated_at = now()
-        where id = ${id}
-          and status in ('reserved', 'analyzing', 'generating')
-        returning id
-      `
-    : await sql<{ id: string }>`
-        update generations
-        set status = ${status},
-            breed_id = coalesce(${extra?.breedId ?? null}, breed_id),
-            breed_name = coalesce(${extra?.breedName ?? null}, breed_name),
-            reason = coalesce(${extra?.reason ?? null}, reason),
-            result_data = coalesce(${extra?.resultData ?? null}, result_data),
-            result_expires_at = case
-              when ${extra?.resultData ?? null} is not null then now() + interval '24 hours'
-              else result_expires_at
-            end,
-            error_code = coalesce(${extra?.errorCode ?? null}, error_code),
-            updated_at = now()
-        where id = ${id}
-        returning id
-      `;
+  if (status === "ready") {
+    const rows = await sql<{ id: string }>`
+      update generations
+      set status = 'ready',
+          breed_id = coalesce(${extra?.breedId ?? null}, breed_id),
+          breed_name = coalesce(${extra?.breedName ?? null}, breed_name),
+          reason = coalesce(${extra?.reason ?? null}, reason),
+          result_data = ${extra?.resultData ?? null},
+          result_expires_at = now() + interval '1 day',
+          updated_at = now()
+      where id = ${id}
+        and status in ('reserved', 'analyzing', 'generating')
+      returning id
+    `;
+    return Boolean(rows[0]);
+  }
+  if (status === "rejected" || status === "failed" || status === "expired") {
+    const rows = await sql<{ id: string }>`
+      update generations
+      set status = ${status},
+          error_code = coalesce(${extra?.errorCode ?? null}, error_code),
+          updated_at = now()
+      where id = ${id}
+        and status in ('reserved', 'analyzing', 'generating')
+      returning id
+    `;
+    return Boolean(rows[0]);
+  }
+  const rows = await sql<{ id: string }>`
+    update generations
+    set status = ${status},
+        breed_id = coalesce(${extra?.breedId ?? null}, breed_id),
+        breed_name = coalesce(${extra?.breedName ?? null}, breed_name),
+        reason = coalesce(${extra?.reason ?? null}, reason),
+        updated_at = now()
+    where id = ${id}
+    returning id
+  `;
   return Boolean(rows[0]);
 }
 
@@ -155,8 +157,11 @@ export async function expireStaleJobs(): Promise<void> {
   const stale = await sql<{ id: string; visitor_id: string; reserved_kind: ReservedKind | null }>`
     update generations
     set status = 'expired', updated_at = now()
-    where status in ('reserved', 'analyzing', 'generating')
-      and created_at < now() - interval '6 minutes'
+    where (
+        status in ('analyzing', 'generating')
+        and created_at < now() - interval '6 minutes'
+      )
+      or status = 'reserved'
     returning id, visitor_id, reserved_kind
   `;
   for (const job of stale) {

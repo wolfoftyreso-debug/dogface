@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs";
 import { sha256 } from "./crypto";
 import { dbConfigured } from "./db";
 import {
@@ -40,6 +41,17 @@ function onVercel(): boolean {
   return Boolean(process.env["VERCEL"]);
 }
 
+function logJob(msg: string, err?: unknown) {
+  const extra = err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : err ? String(err) : "";
+  const line = `[hundtvilling] ${new Date().toISOString()} ${msg}${extra ? ` ${extra}` : ""}\n`;
+  console.info(line.trim());
+  try {
+    appendFileSync("/tmp/hundtvilling.log", line);
+  } catch {
+    // preview/prod /tmp only
+  }
+}
+
 type MemJob = {
   id: string;
   visitorId: string;
@@ -70,7 +82,7 @@ export async function runDogTwin(
   if (payload !== "ok") return fail(payload);
   if (!isRequestId(requestId)) return fail("failed");
   const hasKey = Boolean(env("XAI_API_KEY"));
-  console.info(`[hundtvilling] generate start hasKey=${hasKey} db=${dbConfigured()} req=${requestId.slice(0, 8)}`);
+  logJob(`generate start hasKey=${hasKey} db=${dbConfigured()} req=${requestId.slice(0, 8)}`);
   if (!hasKey) return fail("unavailable");
   if (!dbConfigured()) return runWithoutDb(image, requestId, style);
 
@@ -120,7 +132,8 @@ export async function runDogTwin(
       payloadHash,
       reservedKind: kind,
     });
-  } catch {
+  } catch (err) {
+    logJob("insert job", err);
     await releaseCredit(visitor.id, kind);
     const raced = await getJob(requestId, visitor.id);
     const latest = await getVisitorById(visitor.id);
@@ -138,15 +151,23 @@ export async function runDogTwin(
     return fail("busy", remainingOf(visitor));
   }
 
-  await setJobStatus(requestId, "analyzing");
-  const work = finishDbJob(requestId, image, style, visitor.id, kind);
+  const latest = await getVisitorById(visitor.id);
+  const remaining = latest ? remainingOf(latest) : 0;
   if (!onVercel()) {
-    void work.catch((err) => {
-      console.info("[hundtvilling] background job", err instanceof Error ? err.message : "error");
+    const snap = { requestId, image, style, visitorId: visitor.id, kind };
+    setImmediate(() => {
+      void finishDbJob(snap.requestId, snap.image, snap.style, snap.visitorId, snap.kind).catch((err) =>
+        logJob("background job", err),
+      );
     });
-    return pending(requestId, remainingOf(visitor));
+    return pending(requestId, remaining);
   }
-  return work;
+  try {
+    return await finishDbJob(requestId, image, style, visitor.id, kind);
+  } catch (err) {
+    logJob("await job", err);
+    return fail("failed", remaining);
+  }
 }
 
 async function finishDbJob(
@@ -193,7 +214,7 @@ async function finishDbJob(
     if (!marked) return fail("timeout");
     await bumpGenerationCounter();
     const latest = await getVisitorById(visitorId);
-    console.info(`[hundtvilling] ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
+    logJob(`ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
     return {
       ok: true,
       id: requestId,
@@ -206,7 +227,7 @@ async function finishDbJob(
   } catch (err) {
     const { AppError } = await import("./xai.server.ts");
     const code = err instanceof AppError ? err.code : "failed";
-    console.info(`[hundtvilling] job fail ${requestId.slice(0, 8)} ${code} ${err instanceof Error ? err.message : ""}`);
+    logJob(`job fail ${requestId.slice(0, 8)} ${code}`, err);
     const current = await getJob(requestId, visitorId);
     if (current?.status === "ready" && current.resultData) {
       const latest = await getVisitorById(visitorId);
@@ -234,7 +255,7 @@ async function runWithoutDb(
   const visitor = cookieVisitor();
   if (remainingOf(visitor) <= 0) return fail("payment_required", 0);
 
-  const kind = visitor.freeRemaining > 0 ? "free" : "paid";
+  const kind: "free" | "paid" = visitor.freeRemaining > 0 ? "free" : "paid";
   if (kind === "free") visitor.freeRemaining = 0;
   else visitor.paidRemaining = Math.max(0, visitor.paidRemaining - 1);
   writeCookieVisitor(visitor);
@@ -250,14 +271,16 @@ async function runWithoutDb(
     remaining: remainingOf(visitor),
   });
 
-  const work = finishMemJob(requestId, image, style, visitor, kind);
   if (!onVercel()) {
-    void work.catch((err) => {
-      console.info("[hundtvilling] mem job", err instanceof Error ? err.message : "error");
+    const snap = { requestId, image, style, visitor, kind };
+    setImmediate(() => {
+      void finishMemJob(snap.requestId, snap.image, snap.style, snap.visitor, snap.kind).catch((err) =>
+        logJob("mem job", err),
+      );
     });
     return pending(requestId, remainingOf(visitor));
   }
-  return work;
+  return finishMemJob(requestId, image, style, visitor, kind);
 }
 
 async function finishMemJob(
@@ -318,7 +341,7 @@ async function finishMemJob(
       errorCode: "",
       remaining: remainingOf(visitor),
     });
-    console.info(`[hundtvilling] mem ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
+    logJob(`mem ready ${requestId.slice(0, 8)} ${analysis.breedName}`);
     return {
       ok: true,
       id: requestId,
@@ -332,7 +355,7 @@ async function finishMemJob(
     const { AppError } = await import("./xai.server.ts");
     refund();
     const code = err instanceof AppError ? err.code : "failed";
-    console.info(`[hundtvilling] mem fail ${requestId.slice(0, 8)} ${code}`);
+    logJob(`mem fail ${requestId.slice(0, 8)} ${code}`, err);
     memJobs().set(requestId, {
       id: requestId,
       visitorId: visitor.id,
@@ -367,11 +390,11 @@ export async function readGeneration(id: string): Promise<GenerateResult> {
     }
     return { ok: true, id: mem.id, status: mem.status, remaining: mem.remaining };
   }
-  if (!dbConfigured()) return { ok: true, id, status: "analyzing", remaining: remainingOf(cookieVisitor()) };
+  if (!dbConfigured()) return fail("failed", remainingOf(cookieVisitor()));
 
   const visitor = await ensureVisitor();
   const job = await getJob(id, visitor.id);
-  if (!job) return { ok: true, id, status: "analyzing", remaining: remainingOf(visitor) };
+  if (!job) return fail("failed", remainingOf(visitor));
   if (job.status === "ready" || job.status === "delivered") {
     if (!job.resultData) return fail("failed", remainingOf(visitor));
     if (job.status === "ready") await markDelivered(id, visitor.id);
