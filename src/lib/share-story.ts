@@ -92,7 +92,7 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
 
   ctx.fillStyle = "#ff4d2e";
   ctx.font = "700 34px ui-rounded, system-ui, sans-serif";
-  ctx.fillText("Doggy Style", width / 2, height - 120);
+  ctx.fillText("Dogg Style", width / 2, height - 120);
 
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/jpeg", 0.9),

@@ -108,7 +108,7 @@ export function filenameForBreed(breed: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 48);
-  return `doggystyle-${slug || "hund"}.jpg`;
+  return `doggstyle-${slug || "hund"}.jpg`;
 }
 
 export async function saveDraft(imageDataUrl: string): Promise<void> {

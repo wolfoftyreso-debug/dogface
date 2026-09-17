@@ -373,7 +373,7 @@ export function HundtvillingApp() {
         <div className="brand">
           <img src="/logo-mark.png" alt="" className="brand-mark" />
           <p className="brand-name">
-            Doggy
+            Dogg
             <em>Style</em>
           </p>
         </div>
@@ -634,7 +634,7 @@ function InfoSheet({ onClose, onRestore }: { onClose: () => void; onRestore: () 
     <div className="share-sheet" role="dialog" aria-label="Info" aria-modal="true">
       <button type="button" className="share-dismiss" aria-label="Stäng" onClick={onClose} />
       <div className="share-card">
-        <h2 className="font-display text-2xl tracking-tight">Doggy Style</h2>
+        <h2 className="font-display text-2xl tracking-tight">Dogg Style</h2>
         <nav className="mt-5 flex flex-col">
           <a className="info-link" href="/integritet">
             Integritet

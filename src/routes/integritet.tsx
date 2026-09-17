@@ -7,7 +7,7 @@ function PrivacyPage() {
   return (
     <LegalPage title="Integritet">
       <p>
-        Doggy Style skapar en lekfull hundbild från ett foto du väljer. Fotot skickas till vår
+        Dogg Style skapar en lekfull hundbild från ett foto du väljer. Fotot skickas till vår
         AI-leverantör (xAI) för analys och bildgenerering.
       </p>
       <p>
