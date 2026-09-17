@@ -420,7 +420,8 @@ export function HundtvillingApp() {
           </div>
         ) : null}
 
-        {shown
+        {latest
+          ? shown
           .slice()
           .reverse()
           .map((item) => {
@@ -495,7 +496,8 @@ export function HundtvillingApp() {
               ) : null}
             </article>
             );
-          })}
+          })
+          : null}
 
         {preview ? (
           <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
