@@ -9,9 +9,9 @@ const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
 };
 
 export const SHARE_SAVED_HINT: Record<Exclude<StoryTarget, "system">, string> = {
-  instagram: "Instagram is opening. Pick the story photo from your camera roll.",
-  snapchat: "Snapchat is opening. Pick the story photo from your camera roll.",
-  facebook: "Facebook is opening. Pick the story photo from your camera roll.",
+  instagram: "The photo is ready. In Instagram, add it from Recents.",
+  snapchat: "The photo is ready. In Snapchat, add it from Recents.",
+  facebook: "The photo is ready. In Facebook, add it from Recents.",
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -122,25 +122,27 @@ async function copyImage(blob: Blob): Promise<void> {
 }
 
 async function nativeShare(file: File, title: string, text: string): Promise<"shared" | "saved" | "aborted"> {
-  const payload = { title, text, files: [file] };
   if (typeof navigator.share !== "function") {
     triggerDownload(file);
     return "saved";
   }
-  const canFiles = typeof navigator.canShare !== "function" || navigator.canShare(payload);
+  const withFiles = { title, text, files: [file] };
   try {
-    if (canFiles) {
-      await navigator.share(payload);
+    if (typeof navigator.canShare !== "function" || navigator.canShare(withFiles)) {
+      await navigator.share(withFiles);
       return "shared";
     }
-    await navigator.share({ title, text });
-    triggerDownload(file);
-    return "saved";
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") return "aborted";
-    triggerDownload(file);
-    return "saved";
   }
+  try {
+    await navigator.share({ files: [file] });
+    return "shared";
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") return "aborted";
+  }
+  triggerDownload(file);
+  return "saved";
 }
 
 export async function shareStory(opts: {
@@ -156,12 +158,13 @@ export async function shareStory(opts: {
   const title = "Look how alike I got";
   const text = `Half me, half ${opts.breed}.`;
 
-  if (opts.target === "system") {
-    return nativeShare(file, title, text);
-  }
+  const result = await nativeShare(file, title, text);
+  if (result !== "saved") return result;
 
   void copyImage(blob);
-  if (!isAppleTouch()) triggerDownload(file);
-  window.location.href = APP_SCHEME[opts.target];
+  if (opts.target !== "system") {
+    if (!isAppleTouch()) triggerDownload(file);
+    window.location.href = APP_SCHEME[opts.target];
+  }
   return "saved";
 }
