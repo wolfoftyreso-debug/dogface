@@ -1,6 +1,6 @@
 import { Facebook, Instagram, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { shareStory, type StoryTarget } from "@/lib/share-story";
+import { shareStory, SHARE_SAVED_HINT, type StoryTarget } from "@/lib/share-story";
 import { filenameForBreed } from "@/lib/history";
 import type { HistoryItem } from "@/lib/types";
 
@@ -22,7 +22,11 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
       });
       if (result === "aborted") return;
       if (result === "saved") {
-        onHint("Story-bilden är sparad. Öppna appen och välj den i rullen.");
+        onHint(
+          target === "system"
+            ? "Story-bilden är sparad. Öppna appen och välj den i rullen."
+            : SHARE_SAVED_HINT[target],
+        );
       }
       onClose();
     } catch {

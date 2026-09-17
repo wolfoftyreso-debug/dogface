@@ -1,9 +1,17 @@
+import { isAppleTouch } from "./save-photo";
+
 export type StoryTarget = "instagram" | "snapchat" | "facebook" | "system";
 
 const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
   instagram: "instagram://story-camera",
   snapchat: "snapchat://",
   facebook: "facebook://stories",
+};
+
+export const SHARE_SAVED_HINT: Record<Exclude<StoryTarget, "system">, string> = {
+  instagram: "Instagram öppnas. Välj story-bilden i rullen.",
+  snapchat: "Snapchat öppnas. Välj story-bilden i rullen.",
+  facebook: "Facebook öppnas. Välj story-bilden i rullen.",
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -104,6 +112,37 @@ function triggerDownload(file: File) {
   window.setTimeout(() => URL.revokeObjectURL(url), 2_000);
 }
 
+async function copyImage(blob: Blob): Promise<void> {
+  if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) return;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+  } catch {
+    // Safari can reject jpeg clipboard writes.
+  }
+}
+
+async function nativeShare(file: File, title: string, text: string): Promise<"shared" | "saved" | "aborted"> {
+  const payload = { title, text, files: [file] };
+  if (typeof navigator.share !== "function") {
+    triggerDownload(file);
+    return "saved";
+  }
+  const canFiles = typeof navigator.canShare !== "function" || navigator.canShare(payload);
+  try {
+    if (canFiles) {
+      await navigator.share(payload);
+      return "shared";
+    }
+    await navigator.share({ title, text });
+    triggerDownload(file);
+    return "saved";
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") return "aborted";
+    triggerDownload(file);
+    return "saved";
+  }
+}
+
 export async function shareStory(opts: {
   imageDataUrl: string;
   breed: string;
@@ -114,33 +153,15 @@ export async function shareStory(opts: {
   const file = new File([blob], opts.filename.replace(/\.jpe?g$/i, "") + "-story.jpg", {
     type: "image/jpeg",
   });
-  const payload = {
-    title: "Titta vad lik jag blev",
-    text: `Hälften jag, hälften ${opts.breed}.`,
-    files: [file],
-  };
+  const title = "Titta vad lik jag blev";
+  const text = `Hälften jag, hälften ${opts.breed}.`;
 
-  if (typeof navigator.share === "function") {
-    const canFiles = typeof navigator.canShare !== "function" || navigator.canShare(payload);
-    try {
-      if (canFiles) {
-        await navigator.share(payload);
-        return "shared";
-      }
-      await navigator.share({ title: payload.title, text: payload.text });
-      triggerDownload(file);
-      return "saved";
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return "aborted";
-    }
+  if (opts.target === "system") {
+    return nativeShare(file, title, text);
   }
 
-  triggerDownload(file);
-  const app = opts.target;
-  if (app !== "system") {
-    window.setTimeout(() => {
-      window.location.href = APP_SCHEME[app];
-    }, 350);
-  }
+  void copyImage(blob);
+  if (!isAppleTouch()) triggerDownload(file);
+  window.location.href = APP_SCHEME[opts.target];
   return "saved";
 }

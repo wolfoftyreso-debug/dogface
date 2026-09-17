@@ -3,7 +3,7 @@ export type SavePhotoResult =
   | { ok: true; mode: "press"; objectUrl: string }
   | { ok: false; aborted: boolean };
 
-function isAppleTouch(): boolean {
+export function isAppleTouch(): boolean {
   if (typeof navigator === "undefined") return false;
   return (
     /iP(hone|ad|od)/.test(navigator.userAgent) ||
