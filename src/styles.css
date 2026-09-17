@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f6ead8;
-  --color-surface: #fff8ee;
-  --color-bg-subtle: #f0d9b8;
-  --color-fg: #3a2714;
-  --color-muted: #7a5c42;
-  --color-subtle: #a18468;
-  --color-primary: #4a2c14;
-  --color-primary-fg: #fff8ee;
+  --color-bg: #fff1dc;
+  --color-surface: #fffbf3;
+  --color-bg-subtle: #ffd7b0;
+  --color-fg: #2a1408;
+  --color-muted: #8a4e32;
+  --color-subtle: #c47a52;
+  --color-primary: #ff4d2e;
+  --color-primary-fg: #fffbf3;
   --color-border: color-mix(in oklab, var(--color-fg) 14%, transparent);
   --color-border-strong: color-mix(in oklab, var(--color-fg) 26%, transparent);
-  --color-danger: #8f2d22;
-  --color-camera: #2a1c10;
+  --color-danger: #b42318;
+  --color-camera: #2a1408;
 
   --radius-xs: 4px;
   --radius-sm: 8px;
@@ -22,8 +22,8 @@
   --radius-2xl: 28px;
   --radius-3xl: 32px;
 
-  --font-display: "Instrument Serif", "Times New Roman", serif;
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fredoka", "Trebuchet MS", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -63,7 +63,8 @@
     text-wrap: balance;
     font-family: var(--font-display);
     letter-spacing: -0.03em;
-    line-height: 1.1;
+    font-weight: 650;
+    line-height: 1.05;
   }
 
   p {
@@ -85,6 +86,38 @@
   padding-bottom: max(1.75rem, calc(env(safe-area-inset-bottom) + 1.25rem));
   padding-left: max(1.25rem, env(safe-area-inset-left));
   padding-right: max(1.25rem, env(safe-area-inset-right));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-mark {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.brand-name em {
+  display: block;
+  color: var(--color-primary);
+  font-style: normal;
+  font-size: 0.72em;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .action-card {
@@ -280,8 +313,8 @@
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 999px;
-  background: var(--color-primary-fg);
-  box-shadow: inset 0 0 0 6px var(--color-camera), 0 0 0 3px var(--color-primary-fg);
+  background: var(--color-primary);
+  box-shadow: inset 0 0 0 6px var(--color-camera), 0 0 0 3px var(--color-primary);
 }
 
 .style-toggle {

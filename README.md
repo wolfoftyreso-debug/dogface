@@ -1,4 +1,4 @@
-# Hundtvilling (`dog-twin`)
+# Doggy Style
 
 En mobil webbapp som tar ett foto av en människa och skapar ett fotorealistiskt porträtt av den hund personen liknar.
 

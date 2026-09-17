@@ -297,9 +297,12 @@ export function HundtvillingApp() {
   return (
     <main className="app-shell flex flex-col">
       <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <img src="/mascot-dog.jpg" alt="" className="size-9 rounded-full object-cover ring-1 ring-border" />
-          <p className="font-display text-lg italic tracking-tight">Hundtvilling</p>
+        <div className="brand">
+          <img src="/logo-mark.png" alt="" className="brand-mark" />
+          <p className="brand-name">
+            Doggy
+            <em>Style</em>
+          </p>
         </div>
         {remainingLabel ? (
           <p className="text-xs font-medium tracking-wide text-muted uppercase">{remainingLabel}</p>
@@ -319,11 +322,11 @@ export function HundtvillingApp() {
               </div>
             </div>
             <div className="text-center">
-              <h1 className="font-display text-3xl tracking-tight italic">Vilken hund är du?</h1>
+              <h1 className="font-display text-3xl tracking-tight">Vilken hund är du?</h1>
               <p className="mt-3 text-base text-muted">
-                Välj splitscreen: hälften du, hälften hund. Det är grejen — titta vad lik du blev.
+                Splitscreen: hälften du, hälften hund. Det är hela grejen — titta vad lik du blev.
                 <br />
-                Din första bild är gratis.
+                Första bilden är gratis.
               </p>
             </div>
           </div>
@@ -394,7 +397,7 @@ export function HundtvillingApp() {
           <div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
             <Loader2 className="work-spin size-8 text-fg" strokeWidth={1.75} />
             <p className="text-base font-medium">
-              {workStep === "read" ? "Läser bilden …" : "Skapar din hundtvilling …"}
+              {workStep === "read" ? "Läser bilden …" : "Målar din Doggy Style …"}
             </p>
             <p className="text-sm text-muted">Det kan ta ett par minuter. Låt skärmen vara öppen.</p>
           </div>
@@ -440,7 +443,7 @@ export function HundtvillingApp() {
       <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
         <p className="mb-3 text-center text-xs text-subtle">
           Använd ett foto du har rätt att använda. Bilden skickas till vår AI-leverantör för att skapa din
-          hundtvilling.
+          Doggy Style.
         </p>
         <div className="style-toggle mb-3" role="radiogroup" aria-label="Bildstil">
           <button

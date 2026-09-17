@@ -42,7 +42,7 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas");
 
-  ctx.fillStyle = "#f6ead8";
+  ctx.fillStyle = "#fff1dc";
   ctx.fillRect(0, 0, width, height);
 
   const pad = 72;
@@ -53,7 +53,7 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
   ctx.beginPath();
   ctx.roundRect(pad, cardY, card, card, radius);
   ctx.clip();
-  ctx.fillStyle = "#fff8ee";
+  ctx.fillStyle = "#fffbf3";
   ctx.fillRect(pad, cardY, card, card);
   const scale = Math.max(card / photo.width, card / photo.height);
   const dw = photo.width * scale;
@@ -67,24 +67,24 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
   ctx.roundRect(pad, cardY, card, card, radius);
   ctx.stroke();
 
-  ctx.fillStyle = "#3a2714";
+  ctx.fillStyle = "#2a1408";
   ctx.textAlign = "center";
-  ctx.font = 'italic 72px "Times New Roman", Georgia, serif';
+  ctx.font = "700 72px ui-rounded, system-ui, sans-serif";
   ctx.fillText("Titta vad lik jag blev", width / 2, 280);
 
   ctx.font = '600 42px ui-sans-serif, system-ui, sans-serif';
   ctx.fillText(breed, width / 2, cardY + card + 88);
 
-  ctx.fillStyle = "#7a5c42";
-  ctx.font = "500 28px ui-sans-serif, system-ui, sans-serif";
+  ctx.fillStyle = "#8a4e32";
+  ctx.font = "600 28px ui-sans-serif, system-ui, sans-serif";
   const caption = wrapText(ctx, `Hälften jag, hälften ${breed}.`, width - pad * 2);
   caption.forEach((line, index) => {
     ctx.fillText(line, width / 2, cardY + card + 140 + index * 36);
   });
 
-  ctx.fillStyle = "#a18468";
-  ctx.font = 'italic 32px "Times New Roman", Georgia, serif';
-  ctx.fillText("Hundtvilling", width / 2, height - 120);
+  ctx.fillStyle = "#ff4d2e";
+  ctx.font = "700 34px ui-rounded, system-ui, sans-serif";
+  ctx.fillText("Doggy Style", width / 2, height - 120);
 
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/jpeg", 0.9),
