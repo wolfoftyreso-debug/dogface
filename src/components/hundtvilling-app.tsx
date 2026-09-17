@@ -410,26 +410,28 @@ export function HundtvillingApp() {
       </div>
 
       <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
-        <div className="style-toggle mb-3" role="radiogroup" aria-label="Bildstil">
-          <button
-            type="button"
-            role="radio"
-            aria-checked={style === "split"}
-            className={style === "split" ? "is-on" : undefined}
-            onClick={() => setStyle("split")}
-          >
-            Split
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={style === "dog"}
-            className={style === "dog" ? "is-on" : undefined}
-            onClick={() => setStyle("dog")}
-          >
-            Hund
-          </button>
-        </div>
+        {preview && !working ? (
+          <div className="style-toggle mb-3" role="radiogroup" aria-label="Bildstil">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={style === "split"}
+              className={style === "split" ? "is-on" : undefined}
+              onClick={() => setStyle("split")}
+            >
+              Split
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={style === "dog"}
+              className={style === "dog" ? "is-on" : undefined}
+              onClick={() => setStyle("dog")}
+            >
+              Hund
+            </button>
+          </div>
+        ) : null}
         <div className="grid grid-cols-2 gap-3">
           <Button variant="secondary" onClick={openCamera} aria-label="Ta foto">
             <Camera className="size-4" strokeWidth={1.75} />
