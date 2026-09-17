@@ -52,8 +52,7 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
           <div>
             <h2 className="font-display text-2xl tracking-tight">Share</h2>
             <p className="mt-2 text-sm text-muted">
-              A website cannot drop a photo into Instagram’s camera. Share opens your phone menu with
-              the picture attached — tap Instagram, then Story.
+              The photo is attached. Tap Instagram, then Story.
             </p>
           </div>
           <button

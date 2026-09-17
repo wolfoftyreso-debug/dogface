@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IntegritetRouteImport } from './routes/integritet'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VillkorRouteImport } from './routes/villkor'
 import { Route as ApiCronHousekeepingRouteImport } from './routes/api/cron/housekeeping'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
@@ -26,9 +28,19 @@ const IntegritetRoute = IntegritetRouteImport.update({
   path: '/integritet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VillkorRoute = VillkorRouteImport.update({
@@ -50,7 +62,9 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/integritet': typeof IntegritetRoute
+  '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/villkor': typeof VillkorRoute
   '/api/cron/housekeeping': typeof ApiCronHousekeepingRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -58,7 +72,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/integritet': typeof IntegritetRoute
+  '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/villkor': typeof VillkorRoute
   '/api/cron/housekeeping': typeof ApiCronHousekeepingRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -67,7 +83,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/integritet': typeof IntegritetRoute
+  '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/villkor': typeof VillkorRoute
   '/api/cron/housekeeping': typeof ApiCronHousekeepingRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -77,7 +95,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/integritet'
+    | '/privacy'
     | '/support'
+    | '/terms'
     | '/villkor'
     | '/api/cron/housekeeping'
     | '/api/stripe/webhook'
@@ -85,7 +105,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/integritet'
+    | '/privacy'
     | '/support'
+    | '/terms'
     | '/villkor'
     | '/api/cron/housekeeping'
     | '/api/stripe/webhook'
@@ -93,7 +115,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/integritet'
+    | '/privacy'
     | '/support'
+    | '/terms'
     | '/villkor'
     | '/api/cron/housekeeping'
     | '/api/stripe/webhook'
@@ -102,7 +126,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IntegritetRoute: typeof IntegritetRoute
+  PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   VillkorRoute: typeof VillkorRoute
   ApiCronHousekeepingRoute: typeof ApiCronHousekeepingRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -124,11 +150,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntegritetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/support': {
       id: '/support'
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/villkor': {
@@ -158,7 +198,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IntegritetRoute: IntegritetRoute,
+  PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   VillkorRoute: VillkorRoute,
   ApiCronHousekeepingRoute: ApiCronHousekeepingRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,

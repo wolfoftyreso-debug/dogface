@@ -88,7 +88,7 @@ export async function stampBrand(dataUrl: string): Promise<string> {
   ctx.drawImage(photo, 0, 0, canvas.width, canvas.height);
   const scale = Math.max(canvas.width, canvas.height) / 1080;
   const boxH = 72 * scale;
-  const pad = 26 * scale;
+  const pad = 36 * scale;
   drawBrandLockup(ctx, pad, canvas.height - pad - boxH, scale, logo);
   return canvas.toDataURL("image/jpeg", 0.92);
 }
@@ -96,8 +96,19 @@ export async function stampBrand(dataUrl: string): Promise<string> {
 export async function stampBrandAll<T extends { imageDataUrl: string; splitDataUrl?: string; dogDataUrl?: string }>(
   item: T,
 ): Promise<T> {
-  const imageDataUrl = await stampBrand(item.imageDataUrl);
-  const splitDataUrl = item.splitDataUrl ? await stampBrand(item.splitDataUrl) : item.splitDataUrl;
-  const dogDataUrl = item.dogDataUrl ? await stampBrand(item.dogDataUrl) : item.dogDataUrl;
-  return { ...item, imageDataUrl, splitDataUrl, dogDataUrl };
+  const stamped = new Map<string, string>();
+  async function once(src: string | undefined): Promise<string | undefined> {
+    if (!src) return src;
+    const hit = stamped.get(src);
+    if (hit) return hit;
+    const next = await stampBrand(src);
+    stamped.set(src, next);
+    return next;
+  }
+  return {
+    ...item,
+    imageDataUrl: (await once(item.imageDataUrl)) ?? item.imageDataUrl,
+    splitDataUrl: await once(item.splitDataUrl),
+    dogDataUrl: await once(item.dogDataUrl),
+  };
 }

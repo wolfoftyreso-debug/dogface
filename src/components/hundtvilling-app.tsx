@@ -25,6 +25,15 @@ const GENERATE_WAIT_MS = 180_000;
 const JOB_KEY = "ht_job_id";
 const EAT_MS = 1350;
 
+function jobKey(id: string | null): void {
+  try {
+    if (id) sessionStorage.setItem(JOB_KEY, id);
+    else sessionStorage.removeItem(JOB_KEY);
+  } catch {
+    // private mode
+  }
+}
+
 function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -246,7 +255,7 @@ export function HundtvillingApp() {
     } catch {
       setError(ERROR_MESSAGES.failed);
     } finally {
-      sessionStorage.removeItem(JOB_KEY);
+      jobKey(null);
       inFlight.current = false;
       setWorking(false);
     }
@@ -262,21 +271,13 @@ export function HundtvillingApp() {
     setShareHint(null);
     setPaidNotice(null);
     const requestId = crypto.randomUUID();
-    try {
-      sessionStorage.setItem(JOB_KEY, requestId);
-    } catch {
-      // private mode
-    }
+    jobKey(requestId);
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 2500);
     try {
       const started = await generateDogTwin({ data: { image, requestId, style: "dog" } });
       let response = started;
       const jobId = response.ok ? response.id : requestId;
-      try {
-        sessionStorage.setItem(JOB_KEY, jobId);
-      } catch {
-        // private mode
-      }
+      jobKey(jobId);
       if (response.ok && response.status !== "ready") {
         response = await pollUntilReady(jobId);
       } else if (!response.ok && response.code === "failed") {
@@ -308,7 +309,7 @@ export function HundtvillingApp() {
       setError(timedOut ? ERROR_MESSAGES.timeout : ERROR_MESSAGES.failed);
     } finally {
       window.clearTimeout(paintTimer);
-      sessionStorage.removeItem(JOB_KEY);
+      jobKey(null);
       inFlight.current = false;
       setWorking(false);
     }
@@ -666,10 +667,10 @@ function InfoSheet({ onClose, onRestore }: { onClose: () => void; onRestore: () 
       <div className="share-card">
         <h2 className="font-display text-2xl tracking-tight">Dogg Style</h2>
         <nav className="mt-5 flex flex-col">
-          <a className="info-link" href="/integritet">
+          <a className="info-link" href="/privacy">
             Privacy
           </a>
-          <a className="info-link" href="/villkor">
+          <a className="info-link" href="/terms">
             Terms
           </a>
           <a className="info-link" href="/support">
