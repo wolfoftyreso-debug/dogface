@@ -13,6 +13,7 @@ import {
   saveHistoryItem,
 } from "@/lib/history";
 import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
+import { savePhoto } from "@/lib/save-photo";
 import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
@@ -52,6 +53,8 @@ export function HundtvillingApp() {
   const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
   const [style, setStyle] = useState<PortraitStyle>("dog");
   const [infoOpen, setInfoOpen] = useState(false);
+  const [savePressUrl, setSavePressUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     void listHistory()
@@ -338,21 +341,24 @@ export function HundtvillingApp() {
   }
 
   async function saveImage(item: HistoryItem) {
+    if (saving) return;
+    setSaving(true);
+    setShareHint(null);
     try {
-      const dataUrl = displayedImage(item);
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filenameForBreed(item.breed);
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const result = await savePhoto(displayedImage(item), filenameForBreed(item.breed));
+      if (!result.ok) return;
+      if (result.mode === "downloaded") setShareHint("Bilden sparades.");
+      if (result.mode === "press") setSavePressUrl(result.objectUrl);
     } catch {
-      setShareHint("Kunde inte spara. Prova igen.");
+      setShareHint("Kunde inte spara. Prova Dela i stället.");
+    } finally {
+      setSaving(false);
     }
+  }
+
+  function closeSavePress() {
+    if (savePressUrl) URL.revokeObjectURL(savePressUrl);
+    setSavePressUrl(null);
   }
 
   function openShare(item: HistoryItem) {
@@ -446,9 +452,14 @@ export function HundtvillingApp() {
                 </div>
               ) : null}
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="secondary" onClick={() => void saveImage(item)} aria-label="Spara bild">
+                <Button
+                  variant="secondary"
+                  onClick={() => void saveImage(item)}
+                  disabled={saving}
+                  aria-label="Spara bild"
+                >
                   <Download className="size-4" strokeWidth={1.75} />
-                  Spara
+                  {saving ? "Sparar …" : "Spara"}
                 </Button>
                 <Button variant="secondary" onClick={() => openShare(item)} aria-label="Dela till story">
                   <Share2 className="size-4" strokeWidth={1.75} />
@@ -591,6 +602,19 @@ export function HundtvillingApp() {
       ) : null}
       {shareItem ? (
         <ShareSheet item={shareItem} onClose={() => setShareItem(null)} onHint={setShareHint} />
+      ) : null}
+      {savePressUrl ? (
+        <div className="share-sheet" role="dialog" aria-label="Spara bild" aria-modal="true">
+          <button type="button" className="share-dismiss" aria-label="Stäng" onClick={closeSavePress} />
+          <div className="share-card">
+            <h2 className="font-display text-2xl tracking-tight">Spara bilden</h2>
+            <p className="mt-2 text-sm text-muted">Håll inne bilden och välj Spara bild.</p>
+            <img src={savePressUrl} alt="Din hund" className="mt-4 w-full rounded-2xl" />
+            <Button className="mt-4" variant="secondary" onClick={closeSavePress}>
+              Klar
+            </Button>
+          </div>
+        </div>
       ) : null}
       {infoOpen ? (
         <InfoSheet
