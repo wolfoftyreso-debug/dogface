@@ -9,8 +9,8 @@ import {
 import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode, type PortraitStyle } from "./types";
 
-const ANALYSIS_TIMEOUT_MS = 35_000;
-const IMAGE_TIMEOUT_MS = 80_000;
+const ANALYSIS_TIMEOUT_MS = 25_000;
+const IMAGE_TIMEOUT_MS = 55_000;
 const XAI_BASE = "https://api.x.ai/v1";
 
 export class AppError extends Error {
@@ -184,8 +184,8 @@ async function generateWithRetry(
   try {
     return await generateDogImage(imageDataUrl, analysis, style);
   } catch (err) {
-    if (err instanceof AppError && err.code === "unavailable") throw err;
-    await sleep(1200);
+    if (!(err instanceof AppError) || err.code !== "rate_limit") throw err;
+    await sleep(1500);
     return generateDogImage(imageDataUrl, analysis, style);
   }
 }
@@ -194,19 +194,6 @@ export async function producePortraits(
   imageDataUrl: string,
   analysis: AnalysisResult,
 ): Promise<{ dog: string; split?: string }> {
-  const [splitResult, dogResult] = await Promise.allSettled([
-    generateWithRetry(imageDataUrl, analysis, "split"),
-    generateWithRetry(imageDataUrl, analysis, "dog"),
-  ]);
-  const split = splitResult.status === "fulfilled" ? splitResult.value : undefined;
-  const dog = dogResult.status === "fulfilled" ? dogResult.value : undefined;
-  if (splitResult.status !== "fulfilled") {
-    console.info(
-      "[hundtvilling] split generate retry-exhausted",
-      splitResult.reason instanceof Error ? splitResult.reason.message : "error",
-    );
-  }
-  if (split) return { dog: dog ?? split, split };
-  if (dog) return { dog };
-  throw splitResult.status === "rejected" ? splitResult.reason : dogResult.status === "rejected" ? dogResult.reason : new AppError("failed");
+  const split = await generateWithRetry(imageDataUrl, analysis, "split");
+  return { dog: split, split };
 }

@@ -10,6 +10,7 @@ import {
 } from "./entitlement.server";
 import {
   expireStaleJobs,
+  getActiveJob,
   getJob,
   hasActiveJob,
   insertReservedJob,
@@ -149,7 +150,15 @@ export async function runDogTwin(
     return { ok: true, id: existing.id, status: existing.status, remaining: remainingOf(visitor) };
   }
 
-  if (await hasActiveJob(visitor.id)) return fail("busy", remainingOf(visitor));
+  if (await hasActiveJob(visitor.id)) {
+    const active = await getActiveJob(visitor.id);
+    if (active && active.payloadHash === payloadHash) {
+      const status =
+        active.status === "generating" ? ("generating" as const) : ("analyzing" as const);
+      return { ok: true, id: active.id, status, remaining: remainingOf(visitor) };
+    }
+    return fail("busy", remainingOf(visitor));
+  }
 
   const kind = (await reserveCredit(visitor.id)) ?? (paymentsReady() ? null : "open");
   if (!kind) return fail("payment_required", 0);

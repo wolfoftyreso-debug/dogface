@@ -66,15 +66,22 @@ export async function getJob(id: string, visitorId: string): Promise<GenerationJ
 }
 
 export async function hasActiveJob(visitorId: string, exceptId?: string): Promise<boolean> {
+  return Boolean(await getActiveJob(visitorId, exceptId));
+}
+
+export async function getActiveJob(visitorId: string, exceptId?: string): Promise<GenerationJob | null> {
   const sql = await getSql();
-  const rows = await sql<{ id: string }>`
-    select id from generations
+  const rows = await sql<Row>`
+    select id, visitor_id, payload_hash, status, reserved_kind, breed_id, breed_name,
+           reason, result_data, error_code
+    from generations
     where visitor_id = ${visitorId}
       and status in ('reserved', 'analyzing', 'generating')
       and (${exceptId ?? ""} = '' or id <> ${exceptId ?? ""})
+    order by created_at desc
     limit 1
   `;
-  return Boolean(rows[0]);
+  return rows[0] ? mapJob(rows[0]) : null;
 }
 
 export async function insertReservedJob(input: {
@@ -159,7 +166,7 @@ export async function expireStaleJobs(): Promise<void> {
     set status = 'expired', updated_at = now()
     where (
         status in ('analyzing', 'generating')
-        and created_at < now() - interval '6 minutes'
+        and created_at < now() - interval '2 minutes'
       )
       or status = 'reserved'
     returning id, visitor_id, reserved_kind

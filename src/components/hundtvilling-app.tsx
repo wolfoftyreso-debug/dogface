@@ -18,7 +18,8 @@ import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
 
-const GENERATE_WAIT_MS = 210_000;
+const GENERATE_WAIT_MS = 120_000;
+const JOB_KEY = "ht_job_id";
 
 function hasLiveCamera(): boolean {
   return typeof navigator.mediaDevices?.getUserMedia === "function";
@@ -76,6 +77,16 @@ export function HundtvillingApp() {
     void loadDraft().then((draft) => {
       if (draft) setPreview(draft);
     });
+    const storedId = (() => {
+      try {
+        return sessionStorage.getItem(JOB_KEY);
+      } catch {
+        return null;
+      }
+    })();
+    if (storedId) {
+      void resumeJob(storedId);
+    }
   }, []);
 
   useEffect(() => {
@@ -166,6 +177,67 @@ export function HundtvillingApp() {
     }
   }
 
+  async function applyReady(response: Extract<Awaited<ReturnType<typeof getGeneration>>, { ok: true }>) {
+    if (response.status !== "ready") return false;
+    const item: HistoryItem = {
+      id: response.id,
+      createdAt: Date.now(),
+      breed: response.breed,
+      reason: response.reason,
+      imageDataUrl: response.imageDataUrl,
+      splitDataUrl: response.splitDataUrl,
+      dogDataUrl: response.dogDataUrl,
+    };
+    setLatest(item);
+    latestRef.current = item;
+    setStyle(response.splitDataUrl ? "split" : "dog");
+    setRemaining(response.remaining);
+    setFreeRemaining(0);
+    setPreview(null);
+    await clearDraft();
+    try {
+      setHistory(await saveHistoryItem(item));
+    } catch {
+      try {
+        const slim = { ...item, dogDataUrl: undefined };
+        setHistory(await saveHistoryItem(slim));
+      } catch {
+        setHistory((current) => [item, ...current].slice(0, 10));
+      }
+    }
+    return true;
+  }
+
+  async function resumeJob(requestId: string) {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setWorking(true);
+    setWorkStep("paint");
+    setError(null);
+    try {
+      const peek = await getGeneration({ data: { id: requestId } });
+      if (peek.ok && peek.status === "ready") {
+        await applyReady(peek);
+        return;
+      }
+      if (!peek.ok) return;
+      const response = await pollUntilReady(requestId);
+      if (response.ok) {
+        if (await applyReady(response)) return;
+        setError(ERROR_MESSAGES.timeout);
+        return;
+      }
+      setError(response.message);
+      if (typeof response.remaining === "number") setRemaining(response.remaining);
+    } catch {
+      setError(ERROR_MESSAGES.failed);
+    } finally {
+      sessionStorage.removeItem(JOB_KEY);
+      inFlight.current = false;
+      setWorking(false);
+    }
+  }
+
   async function runGeneration(image: string) {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -175,16 +247,32 @@ export function HundtvillingApp() {
     setShareHint(null);
     setPaidNotice(null);
     const requestId = crypto.randomUUID();
-    const paintTimer = window.setTimeout(() => setWorkStep("paint"), 8000);
+    try {
+      sessionStorage.setItem(JOB_KEY, requestId);
+    } catch {
+      // private mode
+    }
+    const paintTimer = window.setTimeout(() => setWorkStep("paint"), 2500);
     try {
       const started = await generateDogTwin({ data: { image, requestId, style: "dog" } });
       let response = started;
+      const jobId = response.ok ? response.id : requestId;
+      try {
+        sessionStorage.setItem(JOB_KEY, jobId);
+      } catch {
+        // private mode
+      }
       if (response.ok && response.status !== "ready") {
-        response = await pollUntilReady(requestId);
+        response = await pollUntilReady(jobId);
       } else if (!response.ok && response.code === "failed") {
-        const peek = await getGeneration({ data: { id: requestId } });
+        const peek = await getGeneration({ data: { id: jobId } });
         if (peek.ok && peek.status !== "ready") {
-          response = await pollUntilReady(requestId);
+          response = await pollUntilReady(jobId);
+        }
+      } else if (!response.ok && response.code === "busy") {
+        const peek = await getGeneration({ data: { id: jobId } });
+        if (peek.ok && peek.status !== "ready") {
+          response = await pollUntilReady(jobId);
         }
       }
       if (!response || !response.ok) {
@@ -196,41 +284,15 @@ export function HundtvillingApp() {
         }
         return;
       }
-      if (response.status !== "ready") {
+      if (!(await applyReady(response))) {
         setError(ERROR_MESSAGES.timeout);
-        return;
-      }
-      const item: HistoryItem = {
-        id: response.id,
-        createdAt: Date.now(),
-        breed: response.breed,
-        reason: response.reason,
-        imageDataUrl: response.imageDataUrl,
-        splitDataUrl: response.splitDataUrl,
-        dogDataUrl: response.dogDataUrl,
-      };
-      setLatest(item);
-      latestRef.current = item;
-      setStyle(response.splitDataUrl ? "split" : "dog");
-      setRemaining(response.remaining);
-      setFreeRemaining(0);
-      setPreview(null);
-      await clearDraft();
-      try {
-        setHistory(await saveHistoryItem(item));
-      } catch {
-        try {
-          const slim = { ...item, dogDataUrl: undefined };
-          setHistory(await saveHistoryItem(slim));
-        } catch {
-          setHistory((current) => [item, ...current].slice(0, 10));
-        }
       }
     } catch (err) {
       const timedOut = err instanceof Error && err.message === "timeout";
       setError(timedOut ? ERROR_MESSAGES.timeout : ERROR_MESSAGES.failed);
     } finally {
       window.clearTimeout(paintTimer);
+      sessionStorage.removeItem(JOB_KEY);
       inFlight.current = false;
       setWorking(false);
     }
@@ -361,7 +423,7 @@ export function HundtvillingApp() {
               <div>
                 <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
               </div>
-              {isLatest && item.splitDataUrl ? (
+              {isLatest && item.splitDataUrl && item.dogDataUrl ? (
                 <div className="style-toggle" role="radiogroup" aria-label="Bildstil">
                   <button
                     type="button"
@@ -433,7 +495,8 @@ export function HundtvillingApp() {
         {working ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
             <Loader2 className="work-spin size-8 text-fg" strokeWidth={1.75} />
-            <p className="text-base font-medium">{workStep === "read" ? "Läser …" : "Skapar …"}</p>
+            <p className="text-base font-medium">{workStep === "read" ? "Läser fotot …" : "Skapar din hund …"}</p>
+            <p className="text-sm text-muted">Cirka 20 sekunder.</p>
           </div>
         ) : null}
 
