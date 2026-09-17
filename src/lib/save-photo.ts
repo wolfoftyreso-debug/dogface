@@ -31,6 +31,21 @@ function triggerDownload(blob: Blob, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 4_000);
 }
 
+export async function sharePhotoFile(file: File): Promise<"shared" | "aborted" | "unavailable"> {
+  if (typeof navigator.share !== "function") return "unavailable";
+  const data = { files: [file] };
+  if (typeof navigator.canShare === "function" && !navigator.canShare(data)) {
+    return "unavailable";
+  }
+  try {
+    await navigator.share(data);
+    return "shared";
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") return "aborted";
+    return "unavailable";
+  }
+}
+
 export async function savePhoto(dataUrl: string, filename: string): Promise<SavePhotoResult> {
   const blob = await blobFromDataUrl(dataUrl);
   const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
