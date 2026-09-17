@@ -15,8 +15,13 @@ import {
 import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
 import { ERROR_MESSAGES, type HistoryItem } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
+import { CameraCapture } from "@/components/camera-capture";
 
 const GENERATE_WAIT_MS = 210_000;
+
+function hasLiveCamera(): boolean {
+  return typeof navigator.mediaDevices?.getUserMedia === "function";
+}
 
 function waitWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -65,6 +70,7 @@ export function HundtvillingApp() {
   const [restoreCode, setRestoreCode] = useState<string | null>(null);
   const [paidNotice, setPaidNotice] = useState<string | null>(null);
   const [latest, setLatest] = useState<HistoryItem | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   useEffect(() => {
     void listHistory().then(setHistory).catch(() => undefined);
@@ -140,6 +146,20 @@ export function HundtvillingApp() {
       return;
     }
     void onFile(file);
+  }
+
+  function openCamera() {
+    setError(null);
+    if (hasLiveCamera()) {
+      setCameraOpen(true);
+      return;
+    }
+    cameraRef.current?.click();
+  }
+
+  function fallbackNativeCamera() {
+    setCameraOpen(false);
+    cameraRef.current?.click();
   }
 
   async function startCheckout() {
@@ -449,7 +469,7 @@ export function HundtvillingApp() {
           hundtvilling.
         </p>
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={() => cameraRef.current?.click()} aria-label="Ta foto">
+          <Button variant="secondary" onClick={openCamera} aria-label="Ta foto">
             <Camera className="size-4" strokeWidth={1.75} />
             Ta foto
           </Button>
@@ -484,7 +504,7 @@ export function HundtvillingApp() {
         ref={cameraRef}
         type="file"
         accept="image/*"
-        capture="user"
+        capture="environment"
         className="sr-only"
         onChange={onInputChange}
         aria-label="Ta foto"
@@ -506,6 +526,16 @@ export function HundtvillingApp() {
           setRestoreOpen(false);
         }}
       />
+      {cameraOpen ? (
+        <CameraCapture
+          onCapture={(file) => {
+            setCameraOpen(false);
+            void onFile(file);
+          }}
+          onClose={() => setCameraOpen(false)}
+          onUnavailable={fallbackNativeCamera}
+        />
+      ) : null}
     </main>
   );
 }
