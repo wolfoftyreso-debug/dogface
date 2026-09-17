@@ -1,16 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Facebook, Instagram, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  copyStoryImage,
-  openStoryApp,
-  prefetchStoryCard,
-  shareStory,
-  SHARE_SAVED_HINT,
-  type StoryTarget,
-} from "@/lib/share-story";
-import { isAppleTouch } from "@/lib/save-photo";
+import { blobFromDataUrl, isAppleTouch } from "@/lib/save-photo";
 import { filenameForBreed } from "@/lib/history";
+import { openStoryApp, type StoryTarget } from "@/lib/share-story";
 import type { HistoryItem } from "@/lib/types";
 
 type ShareSheetProps = {
@@ -20,46 +13,50 @@ type ShareSheetProps = {
 };
 
 export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
+  const fileRef = useRef<File | null>(null);
+
   useEffect(() => {
-    prefetchStoryCard(item.imageDataUrl, item.breed);
+    let live = true;
+    const name = filenameForBreed(item.breed);
+    void blobFromDataUrl(item.imageDataUrl).then((blob) => {
+      if (!live) return;
+      fileRef.current = new File([blob], name, { type: blob.type || "image/jpeg" });
+    });
+    return () => {
+      live = false;
+    };
   }, [item.breed, item.imageDataUrl]);
 
-  async function post(target: StoryTarget) {
+  async function fileForShare(): Promise<File> {
+    if (fileRef.current) return fileRef.current;
+    const blob = await blobFromDataUrl(item.imageDataUrl);
+    const file = new File([blob], filenameForBreed(item.breed), { type: blob.type || "image/jpeg" });
+    fileRef.current = file;
+    return file;
+  }
+
+  async function send(target: StoryTarget) {
     onHint(null);
-    try {
-      const result = await shareStory({
-        imageDataUrl: item.imageDataUrl,
-        breed: item.breed,
-        filename: filenameForBreed(item.breed),
-        target,
-      });
-      if (result === "aborted") return;
-      if (result === "saved") {
-        onHint(
-          target === "system"
-            ? "Story photo saved. Open the app and pick it from Recents."
-            : SHARE_SAVED_HINT[target],
-        );
+    const file = await fileForShare();
+    if (typeof navigator.share === "function") {
+      const payload = { files: [file] };
+      try {
+        if (typeof navigator.canShare !== "function" || navigator.canShare(payload)) {
+          await navigator.share(payload);
+          onClose();
+          return;
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
       }
-      onClose();
-    } catch {
-      onHint("Couldn’t share. Save the photo instead.");
     }
-  }
-
-  function openApp(target: Exclude<StoryTarget, "system">) {
-    copyStoryImage(item.imageDataUrl, item.breed);
-    openStoryApp(target);
-    onHint(SHARE_SAVED_HINT[target]);
-    onClose();
-  }
-
-  function onApp(target: Exclude<StoryTarget, "system">) {
-    if (isAppleTouch()) {
-      openApp(target);
+    if (target !== "system" && isAppleTouch()) {
+      openStoryApp(target);
+      onHint("Save the photo first, then pick it from Recents in the app.");
+      onClose();
       return;
     }
-    void post(target);
+    onHint("Couldn’t share. Save the photo instead.");
   }
 
   return (
@@ -69,6 +66,7 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl tracking-tight">Share</h2>
+            <p className="mt-1 text-sm text-muted">The photo is attached. Tap Instagram in the next menu.</p>
           </div>
           <button
             type="button"
@@ -79,20 +77,21 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
             <X className="size-5" strokeWidth={1.75} />
           </button>
         </div>
+        <img src={item.imageDataUrl} alt="" className="mb-4 w-full rounded-2xl" />
         <div className="share-grid">
-          <Button variant="secondary" onClick={() => onApp("instagram")}>
+          <Button variant="secondary" onClick={() => void send("instagram")}>
             <Instagram className="size-4" strokeWidth={1.75} />
             Instagram
           </Button>
-          <Button variant="secondary" onClick={() => onApp("snapchat")}>
+          <Button variant="secondary" onClick={() => void send("snapchat")}>
             <MessageCircle className="size-4" strokeWidth={1.75} />
             Snapchat
           </Button>
-          <Button variant="secondary" onClick={() => onApp("facebook")}>
+          <Button variant="secondary" onClick={() => void send("facebook")}>
             <Facebook className="size-4" strokeWidth={1.75} />
             Facebook
           </Button>
-          <Button onClick={() => void post("system")}>Other apps</Button>
+          <Button onClick={() => void send("system")}>Other apps</Button>
         </div>
       </div>
     </div>
