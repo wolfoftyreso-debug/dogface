@@ -30,6 +30,10 @@ const valid = {
   headPose: "near-frontal, ~8 degree right tilt",
   hairAndFurnishings: "dense salt-and-pepper moustache curving down, heavy brows, short cropped hair",
   colorMap: "salt-and-pepper hair to salt-and-pepper coat; hazel iris to hazel dog eyes",
+  skinTone: "fair warm undertone, slight cheek flush",
+  irisColor: "hazel-green with gold spokes, dark limbal ring",
+  accentColors: "warm silver hair highlights, muted rose lip",
+  hairTexture: "coarse wavy salt-and-pepper, short cropped, wiry",
   identityAnchors: [
     "close-set eyes",
     "direct intense camera gaze",
@@ -161,12 +165,20 @@ describe("generation prompt", () => {
     assert.match(prompt, /close-set eyes/i);
     assert.match(prompt, /downward-curving moustache/i);
     assert.match(prompt, /PRIORITY ORDER/i);
-    assert.match(prompt, /1 gaze direction/i);
+    assert.match(prompt, /1 iris color/i);
     assert.match(prompt, /SEAMLESS JOIN/i);
     assert.match(prompt, /no seam/i);
     assert.match(prompt, /CAMERA REALISM/i);
     assert.match(prompt, /real living|REAL living|true canine/i);
     assert.match(prompt, /Not CGI|not CGI|CGI/i);
+    assert.match(prompt, /HARD MICRO-SYNC/i);
+    assert.match(prompt, /Iris lock/i);
+    assert.match(prompt, /inter-pupillary/i);
+    assert.match(prompt, /Hair texture lock/i);
+    assert.match(prompt, /Skin lock/i);
+    assert.match(prompt, /Accent colors/i);
+    assert.match(prompt, /Expression lock/i);
+    assert.match(prompt, /generic brown dog eyes/i);
     assert.match(prompt, /COMPOSITION LOCK/i);
     assert.doesNotMatch(prompt, /Forbidden: human skin/);
     assert.doesNotMatch(prompt, /puppy-like hero lighting/i);

@@ -78,6 +78,10 @@ export function blueprintForQc(analysis: AnalysisResult) {
     expression: analysis.expression,
     hairAndFurnishings: analysis.hairAndFurnishings,
     colorMap: analysis.colorMap,
+    skinTone: analysis.skinTone,
+    irisColor: analysis.irisColor,
+    accentColors: analysis.accentColors,
+    hairTexture: analysis.hairTexture,
     identityAnchors: analysis.identityAnchors,
   };
 }
@@ -92,7 +96,7 @@ export function buildCorrectionPrompt(analysis: AnalysisResult, qc: QcResult): s
     instructions && `Correct specifically: ${instructions}`,
     qc.weakestFeatures.length ? `Weakest features: ${qc.weakestFeatures.join("; ")}` : "",
     "Keep the vertical split: left human, right a REAL dog of this breed with true muzzle and fur, not CGI. Melt the join so no seam is visible.",
-    "Preserve source gaze, eye relationship, head pose, expression, and identity anchors.",
+    "Preserve source iris color, eye spacing, expression, skin tone, hair texture, accent colors, gaze, pose, and identity anchors.",
   ]
     .filter((part) => part && part.trim().length > 0)
     .join(" ");
@@ -105,7 +109,7 @@ export const QC_SYSTEM_PROMPT = [
   "Accept when an observer could understand why THIS particular dog came from THIS photograph.",
   "The result must be a vertical split photograph: left half this human, right half a real living dog of the chosen breed, fused so no seam is visible. CGI, cartoon fur, a human nose on the dog, a full dog, a hard cut, or a costume fails.",
   "Reject generic breed stock portraits that are not customized to the source person.",
-  "Gaze, eye relationship, head pose, and expression must be preserved where they were observable in the source.",
+  "Gaze, iris color, eye spacing, expression, skin tone, and hair texture must match the source where they were observable. Generic brown dog eyes or a stock coat fail.",
   "Minor fur polish or lighting differences are acceptable. Lost identity anchors are not.",
   "correctionInstructions must be concrete visual fixes for a second generation pass.",
 ].join(" ");

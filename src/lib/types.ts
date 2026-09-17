@@ -63,6 +63,10 @@ export type AnalysisResult = {
   headPose: string;
   hairAndFurnishings: string;
   colorMap: string;
+  skinTone: string;
+  irisColor: string;
+  accentColors: string;
+  hairTexture: string;
   identityAnchors: string[];
 };
 
