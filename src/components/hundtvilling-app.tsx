@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { generateDogTwin, getGeneration } from "@/lib/generate";
 import { confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
 import {
+  clearAllLocalPhotos,
   clearDraft,
   filenameForBreed,
   listHistory,
@@ -42,7 +43,7 @@ function hasLiveCamera(): boolean {
   return typeof navigator.mediaDevices?.getUserMedia === "function";
 }
 
-export function HundtvillingApp() {
+export function DoggStyleApp() {
   const search = useSearch({ from: "/" });
   const navigate = useNavigate({ from: "/" });
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -72,6 +73,7 @@ export function HundtvillingApp() {
   const [savePressUrl, setSavePressUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [playMode, setPlayMode] = useState<"fetch" | "eat">("fetch");
+  const alive = useRef(true);
 
   useEffect(() => {
     void listHistory()
@@ -100,6 +102,13 @@ export function HundtvillingApp() {
     if (storedId) {
       void resumeJob(storedId);
     }
+  }, []);
+
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -271,6 +280,10 @@ export function HundtvillingApp() {
     } catch {
       setError(ERROR_MESSAGES.failed);
     } finally {
+      if (!alive.current) {
+        inFlight.current = false;
+        return;
+      }
       if (delivered) jobKey(null);
       inFlight.current = false;
       setWorking(false);
@@ -340,6 +353,10 @@ export function HundtvillingApp() {
       setError(timedOut ? ERROR_MESSAGES.timeout : ERROR_MESSAGES.failed);
     } finally {
       window.clearTimeout(paintTimer);
+      if (!alive.current) {
+        inFlight.current = false;
+        return;
+      }
       if (delivered) jobKey(null);
       inFlight.current = false;
       setWorking(false);
@@ -351,6 +368,9 @@ export function HundtvillingApp() {
     let last: Awaited<ReturnType<typeof getGeneration>> | null = null;
     while (Date.now() < deadline) {
       await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      if (!alive.current) {
+        return last ?? { ok: false as const, code: "timeout" as const, message: ERROR_MESSAGES.timeout };
+      }
       last = await getGeneration({ data: { id: requestId } });
       if (last.ok && last.status === "ready") return last;
       if (!last.ok) return last;
@@ -620,7 +640,7 @@ export function HundtvillingApp() {
         ref={cameraRef}
         type="file"
         accept={PHOTO_ACCEPT}
-        capture="environment"
+        capture="user"
         className="sr-only"
         onChange={onInputChange}
         aria-label="Take photo"
@@ -675,6 +695,17 @@ export function HundtvillingApp() {
             setInfoOpen(false);
             setRestoreOpen(true);
           }}
+          onClearPhotos={() => {
+            if (!window.confirm("Delete all Dogg Style photos stored on this phone? Credits stay.")) return;
+            void clearAllLocalPhotos().then(() => {
+              setHistory([]);
+              setLatest(null);
+              latestRef.current = null;
+              setPreview(null);
+              setInfoOpen(false);
+              setShareHint("Photos on this phone were deleted.");
+            });
+          }}
         />
       ) : null}
     </main>
@@ -708,12 +739,21 @@ function PhotoMark() {
   );
 }
 
-function InfoSheet({ onClose, onRestore }: { onClose: () => void; onRestore: () => void }) {
+function InfoSheet({
+  onClose,
+  onRestore,
+  onClearPhotos,
+}: {
+  onClose: () => void;
+  onRestore: () => void;
+  onClearPhotos: () => void;
+}) {
   return (
     <div className="share-sheet" role="dialog" aria-label="Info" aria-modal="true">
       <button type="button" className="share-dismiss" aria-label="Close" onClick={onClose} />
       <div className="share-card">
         <h2 className="font-display text-2xl tracking-tight">Dogg Style</h2>
+        <p className="mt-2 text-sm text-muted">Entertainment. Not for children under 13.</p>
         <nav className="mt-5 flex flex-col">
           <a className="info-link" href="/privacy">
             Privacy
@@ -726,6 +766,9 @@ function InfoSheet({ onClose, onRestore }: { onClose: () => void; onRestore: () 
           </a>
           <button type="button" className="info-link" onClick={onRestore}>
             Restore purchase
+          </button>
+          <button type="button" className="info-link" onClick={onClearPhotos}>
+            Clear photos on this phone
           </button>
         </nav>
       </div>

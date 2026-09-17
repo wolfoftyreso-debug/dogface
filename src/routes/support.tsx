@@ -7,18 +7,22 @@ function SupportPage() {
   return (
     <LegalPage title="Support">
       <p>
-        If a purchase doesn’t show: use the restore code shown after payment. Photo history is local
-        and can’t be rebuilt from the cloud.
+        Dogg Style is a website. Purchases are restored in the app, not through the App Store.
       </p>
       <p>
-        If the code is missing you need the Stripe receipt. Send the Checkout Session id (starts
-        with cs_) or Payment Intent id (starts with pi_) from the receipt. We can’t restore used
-        photos.
+        If a purchase doesn’t show: open Info → Restore purchase and enter the code shown after
+        payment (starts with HT-). Keep a screenshot of that code.
       </p>
       <p>
-        Technical errors and invalid photos don’t use a credit. Saving and sharing the same result
-        is always free.
+        If the code is missing, use the Stripe receipt. The Checkout Session id starts with cs_,
+        the Payment Intent id with pi_. We can’t restore photos that were already generated, and we
+        can’t rebuild photo history from the cloud — history lives on this phone.
       </p>
+      <p>
+        To delete photos stored on this device: Info → Clear photos on this phone. That does not
+        refund credits.
+      </p>
+      <p>Technical errors and invalid photos don’t use a credit. Saving and sharing is always free.</p>
     </LegalPage>
   );
 }

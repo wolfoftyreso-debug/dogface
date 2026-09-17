@@ -18,6 +18,8 @@ export const Route = createRootRoute({
         name: "description",
         content: "Add a photo. We make an image that’s half you, half dog. The first one is free.",
       },
+      { name: "application-name", content: APP_NAME },
+      { name: "format-detection", content: "telephone=no" },
       { name: "theme-color", content: "#ff4d2e" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },

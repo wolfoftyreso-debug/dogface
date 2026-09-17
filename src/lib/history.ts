@@ -150,3 +150,14 @@ export async function clearDraft(): Promise<void> {
     db.close();
   }
 }
+
+export async function clearAllLocalPhotos(): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction([STORE, DRAFT], "readwrite");
+    await reqToPromise(tx.objectStore(STORE).clear());
+    await reqToPromise(tx.objectStore(DRAFT).clear());
+  } finally {
+    db.close();
+  }
+}

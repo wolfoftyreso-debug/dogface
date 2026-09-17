@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HundtvillingApp } from "@/components/hundtvilling-app";
+import { DoggStyleApp } from "@/components/hundtvilling-app";
 
 type Search = {
   checkout?: string;
@@ -13,5 +13,5 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  return <HundtvillingApp />;
+  return <DoggStyleApp />;
 }

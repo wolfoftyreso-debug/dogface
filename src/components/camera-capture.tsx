@@ -207,8 +207,11 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
         {!ready ? (
           <p className="camera-waiting">Starting camera …</p>
         ) : null}
-        <div className="camera-guide" aria-hidden="true">
+        <div className="camera-guide">
           <div className="camera-guide-oval" />
+          {ready ? (
+            <p className="camera-guide-copy">Face the oval. Used only to make your dog.</p>
+          ) : null}
         </div>
       </div>
       <div className="camera-footer">
