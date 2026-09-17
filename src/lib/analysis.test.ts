@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildGenerationPrompt, extractJsonObject, parseAnalysis, ANALYSIS_SYSTEM_PROMPT } from "./analysis.ts";
+import { buildGenerationPrompt, extractJsonObject, fallbackAnalysis, parseAnalysis, ANALYSIS_SYSTEM_PROMPT } from "./analysis.ts";
 import { findBreed } from "./breeds.ts";
 import { nextHistory } from "./history.ts";
 import {
@@ -84,6 +84,12 @@ describe("parseAnalysis", () => {
     assert.equal(parsed?.identityAnchors.length, 8);
     assert.match(parsed?.gaze ?? "", /camera/i);
     assert.match(parsed?.headPose ?? "", /tilt/i);
+  });
+
+  it("fallback analysis is enough to generate", () => {
+    const parsed = fallbackAnalysis();
+    assert.equal(parsed.validHuman, true);
+    assert.ok(parsed.breedName.length > 0);
   });
 
   it("keeps an unknown breed so generation can still run", () => {

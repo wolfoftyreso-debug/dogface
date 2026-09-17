@@ -86,6 +86,34 @@ export function parseAnalysis(raw: unknown): AnalysisResult | null {
   };
 }
 
+export function fallbackAnalysis(): AnalysisResult {
+  return {
+    validHuman: true,
+    subjectSelection: "primary",
+    breedId: "mixed",
+    breedName: "Blandras",
+    visibleTraits: "",
+    reason: "",
+    renderBrief:
+      "Fuse this person with a real dog whose coat matches their hair. Keep their eyes, gaze, and expression.",
+    rejectionReason: "",
+    coat: "",
+    eyes: "",
+    gaze: "",
+    expression: "",
+    eyeGeometry: "",
+    facialGeometry: "",
+    headPose: "",
+    hairAndFurnishings: "",
+    colorMap: "",
+    skinTone: "",
+    irisColor: "",
+    accentColors: "",
+    hairTexture: "",
+    identityAnchors: [],
+  };
+}
+
 export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", style: PortraitStyle = "dog"): string {
   const anchors = analysis.identityAnchors;
   const split = style === "split";

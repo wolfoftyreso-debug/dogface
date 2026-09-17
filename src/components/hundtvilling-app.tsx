@@ -19,7 +19,7 @@ import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
 
-const GENERATE_WAIT_MS = 120_000;
+const GENERATE_WAIT_MS = 180_000;
 const JOB_KEY = "ht_job_id";
 
 function hasLiveCamera(): boolean {

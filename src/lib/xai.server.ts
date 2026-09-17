@@ -4,13 +4,14 @@ import {
   ANALYSIS_USER_TEXT,
   buildGenerationPrompt,
   extractJsonObject,
+  fallbackAnalysis,
   parseAnalysis,
 } from "./analysis";
 import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode, type PortraitStyle } from "./types";
 
-const ANALYSIS_TIMEOUT_MS = 25_000;
-const IMAGE_TIMEOUT_MS = 55_000;
+const ANALYSIS_TIMEOUT_MS = 50_000;
+const IMAGE_TIMEOUT_MS = 75_000;
 const XAI_BASE = "https://api.x.ai/v1";
 
 export class AppError extends Error {
@@ -74,7 +75,7 @@ export async function analyzePhoto(imageDataUrl: string): Promise<AnalysisResult
   const body = {
     model: visionModel(),
     reasoning_effort: "low",
-    max_tokens: 1200,
+    max_tokens: 800,
     temperature: 0.1,
     response_format: ANALYSIS_RESPONSE_FORMAT,
     messages: [
@@ -84,7 +85,7 @@ export async function analyzePhoto(imageDataUrl: string): Promise<AnalysisResult
         content: [
           {
             type: "image_url",
-            image_url: { url: imageDataUrl, detail: "high" },
+            image_url: { url: imageDataUrl, detail: "low" },
           },
           {
             type: "text",
@@ -95,18 +96,24 @@ export async function analyzePhoto(imageDataUrl: string): Promise<AnalysisResult
     ],
   };
 
-  const res = await xaiFetch("/chat/completions", body, ANALYSIS_TIMEOUT_MS);
-  const json = (await res.json()) as {
-    choices?: { message?: { content?: string | null } }[];
-  };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new AppError("failed");
-  const parsed = parseAnalysis(extractJsonObject(content));
-  if (!parsed) {
-    console.info("[hundtvilling] analysis parse failed");
-    throw new AppError("failed");
+  try {
+    const res = await xaiFetch("/chat/completions", body, ANALYSIS_TIMEOUT_MS);
+    const json = (await res.json()) as {
+      choices?: { message?: { content?: string | null } }[];
+    };
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) return fallbackAnalysis();
+    const parsed = parseAnalysis(extractJsonObject(content));
+    if (!parsed) {
+      console.info("[hundtvilling] analysis parse failed, using fallback");
+      return fallbackAnalysis();
+    }
+    return parsed;
+  } catch (err) {
+    const code = err instanceof AppError ? err.code : "failed";
+    console.info(`[hundtvilling] analysis ${code}, using fallback`);
+    return fallbackAnalysis();
   }
-  return parsed;
 }
 
 type ImagePayload = {
