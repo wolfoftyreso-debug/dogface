@@ -149,19 +149,21 @@ describe("breed catalog", () => {
 });
 
 describe("generation prompt", () => {
-  it("asks for this person as this breed, not a generic dog", () => {
+  it("asks for a split portrait of this person as this breed", () => {
     const parsed = parseAnalysis(valid);
     assert.ok(parsed);
     const prompt = buildGenerationPrompt(parsed);
     assert.match(prompt, /THIS PERSON AS THIS BREED/i);
+    assert.match(prompt, /VERTICAL SPLIT PORTRAIT/i);
+    assert.match(prompt, /LEFT HALF/i);
+    assert.match(prompt, /RIGHT HALF/i);
     assert.match(prompt, /HARD IDENTITY ANCHORS/i);
     assert.match(prompt, /close-set eyes/i);
     assert.match(prompt, /downward-curving moustache/i);
     assert.match(prompt, /PRIORITY ORDER/i);
     assert.match(prompt, /1 gaze direction/i);
     assert.match(prompt, /COMPOSITION LOCK/i);
-    assert.match(prompt, /Forbidden: human skin/);
-    assert.doesNotMatch(prompt, /split-face/i);
+    assert.doesNotMatch(prompt, /Forbidden: human skin/);
     assert.doesNotMatch(prompt, /puppy-like hero lighting/i);
   });
 });

@@ -39,22 +39,6 @@
     -moz-osx-font-smoothing: grayscale;
     min-height: 100dvh;
     background-color: var(--color-bg);
-    background-image:
-      linear-gradient(
-        to top,
-        var(--color-bg) 0%,
-        color-mix(in oklab, var(--color-bg) 88%, transparent) 18%,
-        transparent 42%
-      ),
-      radial-gradient(
-        ellipse 70% 52% at 50% 32%,
-        color-mix(in oklab, var(--color-bg) 70%, transparent) 0%,
-        transparent 74%
-      ),
-      url("/dogs-pattern.jpg");
-    background-size: auto, auto, 17rem;
-    background-repeat: no-repeat, repeat;
-    background-position: center, 0 0;
     color: var(--color-fg);
   }
 
@@ -120,6 +104,20 @@
   line-height: 1.45;
   text-align: center;
   outline: 1px solid var(--color-border);
+}
+
+.photo-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 42dvh;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-subtle);
+}
+
+.photo-hero img {
+  object-fit: cover;
 }
 
 .photo-frame {

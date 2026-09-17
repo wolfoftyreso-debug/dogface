@@ -271,7 +271,7 @@ export function HundtvillingApp() {
       });
       const payload = {
         title: "Min hundtvilling",
-        text: `Jag ser ut som en ${item.breed}.`,
+        text: `Hälften jag, hälften ${item.breed}.`,
         files: [file],
       };
       if (navigator.share && navigator.canShare?.(payload)) {
@@ -314,13 +314,24 @@ export function HundtvillingApp() {
 
       <div ref={scrollerRef} className="mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-4">
         {shown.length === 0 && !preview && !working ? (
-          <div className="mt-8 text-center">
-            <h1 className="font-display text-3xl tracking-tight italic">Vilken hund är du?</h1>
-            <p className="mt-3 text-base text-muted">
-              Lägg till ett foto och upptäck din hundtvilling.
-              <br />
-              Din första bild är gratis.
-            </p>
+          <div className="flex flex-col gap-4">
+            <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
+              <div className="photo-hero">
+                <img
+                  src="/hero-split.jpg"
+                  alt="Exempel: hälften människa, hälften hund"
+                  className="size-full object-cover"
+                />
+              </div>
+            </div>
+            <div className="text-center">
+              <h1 className="font-display text-3xl tracking-tight italic">Vilken hund är du?</h1>
+              <p className="mt-3 text-base text-muted">
+                Lägg till ett foto. Vi gör en bild som är hälften du, hälften hund.
+                <br />
+                Din första bild är gratis.
+              </p>
+            </div>
           </div>
         ) : null}
 
@@ -335,7 +346,7 @@ export function HundtvillingApp() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium tracking-wide text-muted uppercase">Du ser ut som en</p>
+                <p className="text-xs font-medium tracking-wide text-muted uppercase">Hälften du, hälften</p>
                 <h2 className="mt-1 font-display text-2xl tracking-tight">{item.breed}</h2>
                 {item.reason ? <p className="mt-2 text-base text-muted">{item.reason}</p> : null}
               </div>

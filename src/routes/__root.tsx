@@ -16,7 +16,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       {
         name: "description",
-        content: "Lägg till ett foto och upptäck din hundtvilling. Första bilden är gratis.",
+        content: "Lägg till ett foto. Vi gör en bild som är hälften du, hälften hund. Första bilden är gratis.",
       },
       { name: "theme-color", content: "#f6ead8" },
       { name: "apple-mobile-web-app-capable", content: "yes" },

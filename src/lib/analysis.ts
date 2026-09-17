@@ -81,28 +81,30 @@ function numbered(items: string[]): string {
 export function buildGenerationPrompt(analysis: AnalysisResult, extra = ""): string {
   const anchors = analysis.identityAnchors;
   return [
-    `Transform the supplied human subject into a fully canine, photorealistic ${analysis.breedName} (${analysis.breedId}).`,
-    "This is an identity-preserving visual translation. The result must be THIS PERSON AS THIS BREED, not a generic specimen of the breed.",
-    "Adapt the breed to the person. Do not adapt the person to a stock dog of that breed.",
-    "100% canine anatomy: canine skull, nose leather, muzzle, mouth, ears, fur. Translate features; never face-swap or create a hybrid.",
-    "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 gaze direction and visual focus, 2 eye spacing and eye relationship, 3 head pose and camera relationship, 4 overall facial/head geometry, 5 distinctive facial hair/fur translation, 6 expression, 7 hair/fur silhouette, 8 characteristic asymmetry, 9 color relationships, 10 breed purity, 11 generic photographic prettiness.",
-    anchors.length ? `HARD IDENTITY ANCHORS: ${numbered(anchors)}` : "",
-    analysis.gaze && `Gaze: ${analysis.gaze} — copy exact direction, eyelid opening, catchlights, intensity. If they look into camera, the dog looks into camera.`,
+    `Create a photorealistic VERTICAL SPLIT PORTRAIT of the supplied person as half human, half ${analysis.breedName} (${analysis.breedId}).`,
+    "ONE head, one photograph. Split the face on the exact vertical midline.",
+    "LEFT HALF: this person's real human face — skin, eye, brow, hair, ear, expression. Do not replace or cartoon the human half.",
+    `RIGHT HALF: a photorealistic ${analysis.breedName} — canine skull, fur, ear, muzzle on that side only. Same eye height, same gaze, same lighting as the human half.`,
+    "The halves must join as one continuous portrait, not two photos glued together, not a collage, not a costume, not a full dog.",
+    "THIS PERSON AS THIS BREED on the dog half. Adapt the breed to the person.",
+    "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 gaze direction and visual focus on BOTH eyes, 2 eye spacing and eye relationship across the split, 3 head pose and camera relationship, 4 overall facial/head geometry, 5 distinctive facial hair/fur translation on the dog half, 6 expression, 7 hair/fur silhouette, 8 characteristic asymmetry, 9 color relationships, 10 breed purity on the dog half.",
+    anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog half): ${numbered(anchors)}` : "",
+    analysis.gaze && `Gaze: ${analysis.gaze} — both the human eye and the dog eye look the same direction.`,
     analysis.eyes && `Eyes/iris: ${analysis.eyes}`,
     analysis.eyeGeometry && `Eye geometry: ${analysis.eyeGeometry}`,
-    analysis.headPose && `Head pose: ${analysis.headPose} — keep yaw, pitch, roll, tilt, and camera angle. Do not straighten a tilted head.`,
+    analysis.headPose && `Head pose: ${analysis.headPose} — keep yaw, pitch, roll, tilt, and camera angle.`,
     analysis.facialGeometry && `Face geometry: ${analysis.facialGeometry}`,
-    analysis.expression && `Expression: ${analysis.expression} — canine equivalent of THIS expression, not a default happy dog.`,
-    analysis.hairAndFurnishings && `Hair/furnishings: ${analysis.hairAndFurnishings} — translate into coat, muzzle furnishings, brow fur, ear silhouette.`,
+    analysis.expression && `Expression: ${analysis.expression}`,
+    analysis.hairAndFurnishings && `Hair/furnishings: ${analysis.hairAndFurnishings} — human hair on the left, translated coat/furnishings on the right.`,
     analysis.colorMap && `Color map: ${analysis.colorMap}`,
-    analysis.coat && `Coat: ${analysis.coat}`,
+    analysis.coat && `Coat on the dog half: ${analysis.coat}`,
     analysis.visibleTraits && `Visible traits: ${analysis.visibleTraits}`,
     analysis.renderBrief,
-    "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction. Same photograph, now a dog.",
-    "Do not beautify, symmetrize, smile-ify, puppy-ify, enlarge eyes, or replace with studio hero lighting.",
-    "Forbidden: human skin, human mouth, human ears, human hands, hybrid, morph, costume, split image, collage, text, watermark, logo, extra faces.",
+    "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction from the source photo.",
+    "Do not beautify, symmetrize, smile-ify, or replace with studio hero lighting.",
+    "Forbidden: full-body dog, two separate images, side-by-side diptych with a gap, collage, text, watermark, logo, extra faces, costume hood.",
     extra,
-    "Square 1:1 head-and-shoulders portrait of the dog that is immediately recognizable as this person translated into that breed.",
+    "Square 1:1 head-and-shoulders split portrait: left human, right dog, immediately readable as this person.",
   ]
     .filter((part) => part && part.trim().length > 0)
     .join(" ");
@@ -124,10 +126,10 @@ export const ANALYSIS_SYSTEM_PROMPT = [
   "HAIR AND FACIAL HAIR are high-value identity: hairline, volume, part, fringe, beard, moustache, brows. Translate into fur furnishings, not a stock coat.",
   "If hair volume or silhouette is one of the strongest visible traits (big curls, afro, long hair, baldness, dramatic fringe), the chosen breed MUST be able to wear that coat shape. Do not pick a close-cropped or short-wire breed when the hair volume is a primary identity anchor — prefer water dogs, poodles, barbets, or other coats that can hold the volume, while still mapping brows and beard into furnishings.",
   "Preserve subtle visible asymmetry. Do not beautify it away.",
-  "COLOR: hair and facial-hair pigment become coat/furnishings. Iris pigment becomes dog iris. Remain a believable dog — do not paint human skin color onto fur.",
+    "COLOR: hair and facial-hair pigment become coat/furnishings on the dog half. Iris pigment becomes the dog iris. The human half keeps real skin.",
   "identityAnchors: 5-10 of the person's most distinctive visible features. These become hard generation priorities. Example: close-set eyes; direct camera gaze; left eye slightly narrower; heavy horizontal brows; downward-curving moustache.",
   "reason: one short clear sentence in Swedish naming the visual likeness. Max 160 characters.",
-  "renderBrief: dense English transformation spec for THIS PERSON AS THIS BREED. Canine anatomy only. Include gaze, pose, furnishings, and anchors. No hybrid.",
+  "renderBrief: dense English spec for a vertical split portrait of THIS PERSON: left half human, right half THIS BREED. Include gaze, pose, furnishings, and anchors.",
 ].join(" ");
 
 export function analysisUserText(): string {
