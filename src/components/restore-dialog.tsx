@@ -29,9 +29,7 @@ export function RestoreDialog({
         <h2 id="restore-title" className="font-display text-2xl tracking-tight">
           Återställ köp
         </h2>
-        <p className="mt-2 text-sm text-muted">
-          Bildhistoriken är lokal och kan inte molnåterställas. Köpta bilder kan återställas med koden från köpet.
-        </p>
+        <p className="mt-2 text-sm text-muted">Ange koden från köpet.</p>
         <input
           value={code}
           onChange={(event) => setCode(event.target.value)}

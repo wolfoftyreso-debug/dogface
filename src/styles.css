@@ -120,6 +120,40 @@
   text-transform: uppercase;
 }
 
+.brand-count {
+  min-width: 1.75rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--color-muted);
+}
+
+.brand-info {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-muted);
+}
+
+.info-link {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+.info-link:last-child {
+  border-bottom: none;
+}
+
 .action-card {
   padding: 0.75rem;
   border-radius: var(--radius-2xl);

@@ -36,8 +36,7 @@ export function ShareSheet({ item, onClose, onHint }: ShareSheetProps) {
       <div className="share-card">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium tracking-wide text-muted uppercase">Posta till story</p>
-            <h2 className="mt-1 font-display text-2xl tracking-tight">Titta vad lik jag blev</h2>
+            <h2 className="font-display text-2xl tracking-tight">Dela</h2>
           </div>
           <button
             type="button"

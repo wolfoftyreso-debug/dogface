@@ -85,7 +85,6 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
   const [previewFacing, setPreviewFacing] = useState<Facing>("user");
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [hint, setHint] = useState("Startar kamera …");
 
   const onUnavailableRef = useRef(onUnavailable);
   onUnavailableRef.current = onUnavailable;
@@ -117,11 +116,6 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
       devicesRef.current = await listVideoDevices();
       if (!cancelled) {
         setReady(true);
-        setHint(
-          actual === "user"
-            ? "Selfie. Vänd kameran för att fota en vän."
-            : "Bakre kamera. Fota din vän.",
-        );
       }
     }
 
@@ -215,13 +209,9 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
         ) : null}
         <div className="camera-guide" aria-hidden="true">
           <div className="camera-guide-oval" />
-          <p className="camera-guide-copy">
-            {previewFacing === "user" ? "Håll huvudet i rutan" : "Håll vännens huvud i rutan"}
-          </p>
         </div>
       </div>
       <div className="camera-footer">
-        <p className="camera-hint">{hint}</p>
         <div className="camera-bar">
         <button
           type="button"
@@ -240,13 +230,12 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
         />
         <button
           type="button"
-          className="camera-flip justify-self-end"
+          className="camera-icon-btn justify-self-end"
           onClick={flipCamera}
           disabled={!ready || busy}
           aria-label={previewFacing === "user" ? "Vänd till bakre kamera" : "Vänd till selfie"}
         >
           <SwitchCamera className="size-5" strokeWidth={1.75} />
-          <span>Vänd kamera</span>
         </button>
       </div>
       </div>

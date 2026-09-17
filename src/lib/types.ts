@@ -36,13 +36,13 @@ export const ERROR_MESSAGES: Record<GenerateErrorCode, string> = {
   ambiguous: "Flera personer syns lika tydligt. Ta ett foto med en huvudperson.",
   rate_limit: "För många försök. Vänta en minut och prova igen.",
   unavailable: "Bildtjänsten är inte redo just nu. Prova igen om en stund.",
-  timeout: "Det tog för lång tid. Fotot är kvar — prova igen.",
-  failed: "Kunde inte skapa hunden. Fotot är kvar — prova igen.",
-  payment_required: "Din första bild är förbrukad. Köp 5 bilder för 2,99 USD.",
-  payment_failed: "Betalningen slutfördes inte. Fotot är kvar.",
-  payment_unavailable: "Köp är inte tillgängliga just nu. Prova senare.",
-  busy: "En bild skapas redan. Vänta tills den är klar.",
-  disabled: "Nya bilder är tillfälligt avstängda.",
+  timeout: "Det tog för lång tid. Prova igen.",
+  failed: "Kunde inte skapa hunden. Prova igen.",
+  payment_required: "Köp 5 bilder för 2,99 USD.",
+  payment_failed: "Betalningen slutfördes inte.",
+  payment_unavailable: "Köp är inte tillgängliga just nu.",
+  busy: "En bild skapas redan.",
+  disabled: "Tillfälligt avstängt.",
 };
 
 export type AnalysisResult = {

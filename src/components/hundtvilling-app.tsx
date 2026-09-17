@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Camera, Copy, Download, ImagePlus, Images, Loader2, Share2 } from "lucide-react";
+import { Camera, Copy, Download, ImagePlus, Images, Info, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateDogTwin, getGeneration } from "@/lib/generate";
 import { confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
@@ -74,6 +74,7 @@ export function HundtvillingApp() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
   const [style, setStyle] = useState<PortraitStyle>("split");
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
     void listHistory().then(setHistory).catch(() => undefined);
@@ -106,10 +107,10 @@ export function HundtvillingApp() {
       const draft = await loadDraft();
       if (draft) {
         setPreview(draft);
-        setPaidNotice("Köpet är klart. Fem bilder finns kvar. Tryck Skapa hundbild för att fortsätta.");
+        setPaidNotice("Klart. Tryck Skapa.");
         setError(null);
       } else {
-        setPaidNotice("Köpet är klart. Fem bilder finns kvar. Välj fotot igen.");
+        setPaidNotice("Klart. Välj fotot igen.");
         setError(null);
       }
     })();
@@ -120,12 +121,9 @@ export function HundtvillingApp() {
   }, [history, preview, working, latest, error]);
 
   const canGenerate = Boolean(preview) && !working;
-  const primaryLabel =
-    remaining === 0
-      ? "Köp 5 bilder – 2,99 USD"
-      : freeRemaining > 0
-        ? "Skapa gratis"
-        : "Skapa hundbild";
+  const primaryLabel = remaining === 0 ? "Köp 2,99 USD" : "Skapa";
+  const remainingLabel =
+    remaining === null ? "" : remaining === 0 ? "0" : String(remaining);
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -285,14 +283,6 @@ export function HundtvillingApp() {
   }
 
   const shown = latest ? [latest, ...history.filter((item) => item.id !== latest.id)] : history;
-  const remainingLabel =
-    remaining === null
-      ? ""
-      : remaining === 1
-        ? "1 bild kvar"
-        : remaining === 0
-          ? "Inga bilder kvar"
-          : `${remaining} bilder kvar`;
 
   return (
     <main className="app-shell flex flex-col">
@@ -304,9 +294,16 @@ export function HundtvillingApp() {
             <em>Style</em>
           </p>
         </div>
-        {remainingLabel ? (
-          <p className="text-xs font-medium tracking-wide text-muted uppercase">{remainingLabel}</p>
-        ) : null}
+        <div className="flex items-center gap-1">
+          {remainingLabel ? (
+            <p className="brand-count" aria-label={`${remainingLabel} bilder kvar`}>
+              {remainingLabel}
+            </p>
+          ) : null}
+          <button type="button" className="brand-info" onClick={() => setInfoOpen(true)} aria-label="Info">
+            <Info className="size-5" strokeWidth={1.75} />
+          </button>
+        </div>
       </header>
 
       <div ref={scrollerRef} className="mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-4">
@@ -323,11 +320,6 @@ export function HundtvillingApp() {
             </div>
             <div className="text-center">
               <h1 className="font-display text-3xl tracking-tight">Vilken hund är du?</h1>
-              <p className="mt-3 text-base text-muted">
-                Splitscreen: hälften du, hälften en riktig hund. Titta vad lik du blev.
-                <br />
-                Första bilden är gratis.
-              </p>
             </div>
           </div>
         ) : null}
@@ -343,9 +335,7 @@ export function HundtvillingApp() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium tracking-wide text-muted uppercase">Titta vad lik du blev</p>
-                <h2 className="mt-1 font-display text-2xl tracking-tight">{item.breed}</h2>
-                {item.reason ? <p className="mt-2 text-base text-muted">{item.reason}</p> : null}
+                <h2 className="font-display text-2xl tracking-tight">{item.breed}</h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="secondary" onClick={() => void saveImage(item)} aria-label="Spara bild">
@@ -396,10 +386,7 @@ export function HundtvillingApp() {
         {working ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center" aria-live="polite">
             <Loader2 className="work-spin size-8 text-fg" strokeWidth={1.75} />
-            <p className="text-base font-medium">
-              {workStep === "read" ? "Läser bilden …" : "Målar din Doggy Style …"}
-            </p>
-            <p className="text-sm text-muted">Det kan ta ett par minuter. Låt skärmen vara öppen.</p>
+            <p className="text-base font-medium">{workStep === "read" ? "Läser …" : "Skapar …"}</p>
           </div>
         ) : null}
 
@@ -421,7 +408,7 @@ export function HundtvillingApp() {
         {restoreCode ? (
           <div className="rounded-xl bg-surface p-3 text-sm text-muted ring-1 ring-border">
             <p>
-              Spara din återställningskod: <span className="font-medium text-fg">{restoreCode}</span>
+              Kod: <span className="font-medium text-fg">{restoreCode}</span>
             </p>
             <button
               type="button"
@@ -440,11 +427,7 @@ export function HundtvillingApp() {
         ) : null}
       </div>
 
-      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
-        <p className="mb-3 text-center text-xs text-subtle">
-          Använd ett foto du har rätt att använda. Bilden skickas till vår AI-leverantör för att skapa din
-          Doggy Style.
-        </p>
+      <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
         <div className="style-toggle mb-3" role="radiogroup" aria-label="Bildstil">
           <button
             type="button"
@@ -453,7 +436,7 @@ export function HundtvillingApp() {
             className={style === "split" ? "is-on" : undefined}
             onClick={() => setStyle("split")}
           >
-            Splitscreen
+            Split
           </button>
           <button
             type="button"
@@ -462,39 +445,22 @@ export function HundtvillingApp() {
             className={style === "dog" ? "is-on" : undefined}
             onClick={() => setStyle("dog")}
           >
-            Hela hunden
+            Hund
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Button variant="secondary" onClick={openCamera} aria-label="Ta foto">
             <Camera className="size-4" strokeWidth={1.75} />
-            Ta foto
+            Kamera
           </Button>
           <Button variant="secondary" onClick={() => libraryRef.current?.click()} aria-label="Välj bild">
             <Images className="size-4" strokeWidth={1.75} />
-            Välj bild
+            Bild
           </Button>
         </div>
         <Button className="mt-3" onClick={() => void onPrimary()} disabled={working || (remaining !== 0 && !canGenerate)}>
           {primaryLabel}
         </Button>
-        {remaining === 0 ? (
-          <p className="mt-2 text-center text-xs text-muted">Engångsköp. Ingen prenumeration.</p>
-        ) : null}
-        <nav className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-subtle">
-          <a href="/integritet" className="underline-offset-2 hover:underline">
-            Integritet
-          </a>
-          <a href="/villkor" className="underline-offset-2 hover:underline">
-            Villkor
-          </a>
-          <button type="button" className="underline-offset-2 hover:underline" onClick={() => setRestoreOpen(true)}>
-            Återställ köp
-          </button>
-          <a href="/support" className="underline-offset-2 hover:underline">
-            Support
-          </a>
-        </nav>
       </div>
 
       <input
@@ -536,6 +502,40 @@ export function HundtvillingApp() {
       {shareItem ? (
         <ShareSheet item={shareItem} onClose={() => setShareItem(null)} onHint={setShareHint} />
       ) : null}
+      {infoOpen ? (
+        <InfoSheet
+          onClose={() => setInfoOpen(false)}
+          onRestore={() => {
+            setInfoOpen(false);
+            setRestoreOpen(true);
+          }}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function InfoSheet({ onClose, onRestore }: { onClose: () => void; onRestore: () => void }) {
+  return (
+    <div className="share-sheet" role="dialog" aria-label="Info" aria-modal="true">
+      <button type="button" className="share-dismiss" aria-label="Stäng" onClick={onClose} />
+      <div className="share-card">
+        <h2 className="font-display text-2xl tracking-tight">Doggy Style</h2>
+        <nav className="mt-5 flex flex-col">
+          <a className="info-link" href="/integritet">
+            Integritet
+          </a>
+          <a className="info-link" href="/villkor">
+            Villkor
+          </a>
+          <a className="info-link" href="/support">
+            Support
+          </a>
+          <button type="button" className="info-link" onClick={onRestore}>
+            Återställ köp
+          </button>
+        </nav>
+      </div>
+    </div>
   );
 }
