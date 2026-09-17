@@ -88,6 +88,10 @@
   padding-right: max(1.25rem, env(safe-area-inset-right));
 }
 
+.app-shell.has-dock {
+  padding-bottom: 0;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -182,6 +186,13 @@
   overflow: hidden;
   border-radius: var(--radius-xl);
   background: var(--color-bg-subtle);
+}
+
+.photo-hero.is-fill {
+  aspect-ratio: auto;
+  max-height: none;
+  height: 100%;
+  min-height: 0;
 }
 
 .photo-hero img {

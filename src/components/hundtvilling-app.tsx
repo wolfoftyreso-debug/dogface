@@ -267,7 +267,7 @@ export function HundtvillingApp() {
   const shown = latest ? [latest, ...history.filter((item) => item.id !== latest.id)] : history;
 
   return (
-    <main className="app-shell flex flex-col">
+    <main className="app-shell has-dock flex flex-col">
       <header className="flex items-center justify-between gap-3">
         <div className="brand">
           <img src="/logo-mark.png" alt="" className="brand-mark" />
@@ -288,11 +288,11 @@ export function HundtvillingApp() {
         </div>
       </header>
 
-      <div ref={scrollerRef} className="mt-6 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-4">
+      <div ref={scrollerRef} className="mt-3 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-2">
         {shown.length === 0 && !preview && !working ? (
-          <div className="flex flex-col gap-4">
-            <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
-              <div className="photo-hero">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="min-h-0 flex-1 overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
+              <div className="photo-hero is-fill">
                 <img
                   src="/hero-split.jpg"
                   alt="Exempel: hälften människa, hälften hund"
@@ -300,9 +300,7 @@ export function HundtvillingApp() {
                 />
               </div>
             </div>
-            <div className="text-center">
-              <h1 className="font-display text-3xl tracking-tight">Vilken hund är du?</h1>
-            </div>
+            <h1 className="text-center font-display text-3xl tracking-tight">Vilken hund är du?</h1>
           </div>
         ) : null}
 
