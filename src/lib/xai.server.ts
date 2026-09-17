@@ -10,7 +10,7 @@ import { env } from "./env.server.ts";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode, type PortraitStyle } from "./types";
 
 const ANALYSIS_TIMEOUT_MS = 35_000;
-const IMAGE_TIMEOUT_MS = 55_000;
+const IMAGE_TIMEOUT_MS = 80_000;
 const XAI_BASE = "https://api.x.ai/v1";
 
 export class AppError extends Error {
@@ -155,7 +155,7 @@ export async function generateDogImage(
     prompt,
     n: 1,
     aspect_ratio: "1:1",
-    resolution: "1k",
+    resolution: "2k",
     response_format: "b64_json",
     image: { url: imageDataUrl, type: "image_url" },
   };

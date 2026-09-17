@@ -164,6 +164,9 @@ describe("generation prompt", () => {
     assert.match(prompt, /1 gaze direction/i);
     assert.match(prompt, /SEAMLESS JOIN/i);
     assert.match(prompt, /no seam/i);
+    assert.match(prompt, /CAMERA REALISM/i);
+    assert.match(prompt, /real living|REAL living|true canine/i);
+    assert.match(prompt, /Not CGI|not CGI|CGI/i);
     assert.match(prompt, /COMPOSITION LOCK/i);
     assert.doesNotMatch(prompt, /Forbidden: human skin/);
     assert.doesNotMatch(prompt, /puppy-like hero lighting/i);

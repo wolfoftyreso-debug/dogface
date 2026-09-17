@@ -83,24 +83,24 @@ export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", styl
   const split = style !== "dog";
   const composition = split
     ? [
-        `Create a photorealistic VERTICAL SPLIT PORTRAIT of the supplied person as half human, half ${analysis.breedName} (${analysis.breedId}).`,
-        "ONE head, one photograph. Split the face on the exact vertical midline.",
-        "LEFT HALF: this person's real human face — skin, eye, brow, hair, ear, expression. Do not replace or cartoon the human half.",
-        `RIGHT HALF: a photorealistic ${analysis.breedName} — canine skull, fur, ear, muzzle on that side only. Same eye height, same gaze, same lighting as the human half.`,
-        "The joke of the image is likeness: a viewer should instantly think look how similar I became.",
-        "SEAMLESS JOIN: melt the two halves so NO seam, cut, knife-edge, gap, or collage line is visible. Skin becomes fur across a soft 8-12 percent transition at the midline. Pores, grain, lighting direction, color temperature, and focus stay continuous. Not two photos taped together.",
-        "The halves must join as one continuous portrait, not two photos glued together, not a collage, not a costume, not a full dog.",
-        "THIS PERSON AS THIS BREED on the dog half. Adapt the breed to the person.",
+        `Edit this photograph into a photorealistic VERTICAL SPLIT PORTRAIT: left half is still this exact person, right half is a real ${analysis.breedName} (${analysis.breedId}) photographed in the same frame.`,
+        "ONE head, one camera, one photograph. Split on the exact vertical midline.",
+        "LEFT HALF: keep this person's real human face — real skin pores, real eye, brow, hair, ear. Do not beautify, cartoon, or replace the human half.",
+        `RIGHT HALF: a REAL living ${analysis.breedName} as photographed by a camera — true canine skull, leather nose, whisker pads, individual fur strands, ear leather. Not a human face with fur. Not a costume. Not CGI.`,
+        "The joke is likeness through eyes, gaze, color, and furnishings — the dog half must still be a dog.",
+        "SEAMLESS JOIN: melt skin into fur across a soft 8-12 percent midline so no seam is visible. No cut, gap, or collage line. Grain, lighting, and focus stay continuous.",
+        "THIS PERSON AS THIS BREED on the dog half, using real kennel-club anatomy.",
       ]
     : [
-        `Create a photorealistic portrait of a real ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
-        "Full canine anatomy. Not a hybrid, not a costume, not a split face, not anthropomorphic.",
-        "THIS PERSON AS THIS BREED. Adapt the breed to the person so a viewer thinks look how similar I became.",
+        `Edit this photograph into a photorealistic camera portrait of a real living ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
+        "Full canine anatomy: muzzle, nose leather, whisker pads, ear leather, coat. Not a hybrid, not a costume, not a split face, not anthropomorphic, not a human skull with fur.",
+        "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, furnishings, and color — the body is a real dog.",
       ];
   return [
     ...composition,
-    "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 gaze direction and visual focus on BOTH eyes, 2 eye spacing and eye relationship across the split, 3 head pose and camera relationship, 4 overall facial/head geometry, 5 distinctive facial hair/fur translation on the dog half, 6 expression, 7 hair/fur silhouette, 8 characteristic asymmetry, 9 color relationships, 10 breed purity on the dog half.",
-    anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog half): ${numbered(anchors)}` : "",
+    "CAMERA REALISM: 85mm portrait, natural light matching the source, real photographic grain, catchlights, subsurface skin, wet nose, separate fur fibers. Looks like a phone photo, not a 3D render.",
+    "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 gaze direction and visual focus on BOTH eyes, 2 eye spacing and eye relationship, 3 head pose and camera relationship, 4 overall head geometry, 5 distinctive facial hair/fur translation, 6 expression, 7 hair/fur silhouette, 8 characteristic asymmetry, 9 color relationships, 10 breed-true canine anatomy on the dog side.",
+    anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog half without turning it human): ${numbered(anchors)}` : "",
     analysis.gaze && `Gaze: ${analysis.gaze} — both the human eye and the dog eye look the same direction.`,
     analysis.eyes && `Eyes/iris: ${analysis.eyes}`,
     analysis.eyeGeometry && `Eye geometry: ${analysis.eyeGeometry}`,
@@ -116,12 +116,12 @@ export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", styl
     "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction from the source photo.",
     "Do not beautify, symmetrize, smile-ify, or replace with studio hero lighting.",
     split
-      ? "Forbidden: visible seam or hard midline cut, full-body dog, two separate images, side-by-side diptych with a gap, collage, text, watermark, logo, extra faces, costume hood."
-      : "Forbidden: human skin, split face, collage, text, watermark, logo, extra faces, costume hood.",
+      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, human nose on the dog half, visible seam, full-body dog, collage, text, watermark, logo, extra faces, costume hood."
+      : "Forbidden: CGI, 3D render, cartoon, plastic fur, human skin, split face, collage, text, watermark, logo, extra faces, costume hood.",
     extra,
     split
-      ? "Square 1:1 head-and-shoulders split portrait: left human, right dog, seamlessly fused, immediately readable as this person."
-      : "Square 1:1 head-and-shoulders canine portrait, immediately readable as this person as this breed.",
+      ? "Square 1:1 head-and-shoulders camera portrait: left human, right real dog, fused, immediately readable as this person."
+      : "Square 1:1 head-and-shoulders camera portrait of a real dog, immediately readable as this person as this breed.",
   ]
     .filter((part) => part && part.trim().length > 0)
     .join(" ");
@@ -146,7 +146,7 @@ export const ANALYSIS_SYSTEM_PROMPT = [
     "COLOR: hair and facial-hair pigment become coat/furnishings on the dog half. Iris pigment becomes the dog iris. The human half keeps real skin.",
   "identityAnchors: 5-10 of the person's most distinctive visible features. These become hard generation priorities. Example: close-set eyes; direct camera gaze; left eye slightly narrower; heavy horizontal brows; downward-curving moustache.",
   "reason: one short clear sentence in Swedish naming the visual likeness. Max 160 characters.",
-  "renderBrief: dense English spec for a vertical split portrait of THIS PERSON: left half human, right half THIS BREED. Include gaze, pose, furnishings, and anchors.",
+  "renderBrief: dense English spec for a CAMERA photograph of THIS PERSON as a vertical split: left half human, right half a real dog of THIS BREED with a true muzzle and fur, not CGI. Include gaze, pose, furnishings, and anchors.",
 ].join(" ");
 
 export function analysisUserText(): string {

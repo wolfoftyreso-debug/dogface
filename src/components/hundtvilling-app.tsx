@@ -324,7 +324,7 @@ export function HundtvillingApp() {
             <div className="text-center">
               <h1 className="font-display text-3xl tracking-tight">Vilken hund är du?</h1>
               <p className="mt-3 text-base text-muted">
-                Splitscreen: hälften du, hälften hund. Det är hela grejen — titta vad lik du blev.
+                Splitscreen: hälften du, hälften en riktig hund. Titta vad lik du blev.
                 <br />
                 Första bilden är gratis.
               </p>
