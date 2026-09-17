@@ -25,7 +25,7 @@ import {
   writeCookieVisitor,
 } from "./session.server";
 import { env } from "./env.server.ts";
-import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult } from "./types";
+import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult, type PortraitStyle } from "./types";
 
 function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
   return { ok: false, code, message: ERROR_MESSAGES[code], remaining };
@@ -35,14 +35,18 @@ function isRequestId(value: string): boolean {
   return /^[0-9a-f-]{16,64}$/i.test(value);
 }
 
-export async function runDogTwin(image: string, requestId: string): Promise<GenerateResult> {
+export async function runDogTwin(
+  image: string,
+  requestId: string,
+  style: PortraitStyle = "split",
+): Promise<GenerateResult> {
   const payload = validateImagePayload(image);
   if (payload !== "ok") return fail(payload);
   if (!isRequestId(requestId)) return fail("failed");
   const hasKey = Boolean(env("XAI_API_KEY"));
   console.info(`[hundtvilling] generate start hasKey=${hasKey} db=${dbConfigured()} req=${requestId.slice(0, 8)}`);
   if (!hasKey) return fail("unavailable");
-  if (!dbConfigured()) return runWithoutDb(image, requestId);
+  if (!dbConfigured()) return runWithoutDb(image, requestId, style);
 
   await expireStaleJobs();
   if (!(await generationsEnabled())) return fail("disabled");
@@ -136,7 +140,7 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
       breedName: analysis.breedName,
       reason: analysis.reason,
     });
-    const imageDataUrl = await produceIdentityDog(image, analysis);
+    const imageDataUrl = await produceIdentityDog(image, analysis, style);
     const marked = await setJobStatus(requestId, "ready", {
       breedId: analysis.breedId,
       breedName: analysis.breedName,
@@ -179,7 +183,11 @@ export async function runDogTwin(image: string, requestId: string): Promise<Gene
   }
 }
 
-async function runWithoutDb(image: string, requestId: string): Promise<GenerateResult> {
+async function runWithoutDb(
+  image: string,
+  requestId: string,
+  style: PortraitStyle,
+): Promise<GenerateResult> {
   const visitor = cookieVisitor();
   if (remainingOf(visitor) <= 0) return fail("payment_required", 0);
 
@@ -209,7 +217,7 @@ async function runWithoutDb(image: string, requestId: string): Promise<GenerateR
       writeCookieVisitor(visitor);
       return fail("failed", remainingOf(visitor));
     }
-    const imageDataUrl = await produceIdentityDog(image, analysis);
+    const imageDataUrl = await produceIdentityDog(image, analysis, style);
     return {
       ok: true,
       id: requestId,

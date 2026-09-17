@@ -7,7 +7,7 @@ import {
   parseAnalysis,
 } from "./analysis";
 import { env } from "./env.server.ts";
-import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode } from "./types";
+import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode, type PortraitStyle } from "./types";
 
 const ANALYSIS_TIMEOUT_MS = 35_000;
 const IMAGE_TIMEOUT_MS = 55_000;
@@ -147,8 +147,9 @@ async function dataUrlFromImagePayload(payload: ImagePayload): Promise<string> {
 export async function generateDogImage(
   imageDataUrl: string,
   analysis: AnalysisResult,
+  style: PortraitStyle = "split",
 ): Promise<string> {
-  const prompt = buildGenerationPrompt(analysis);
+  const prompt = buildGenerationPrompt(analysis, "", style);
   const body = {
     model: imageModel(),
     prompt,
@@ -166,6 +167,7 @@ export async function generateDogImage(
 export async function produceIdentityDog(
   imageDataUrl: string,
   analysis: AnalysisResult,
+  style: PortraitStyle = "split",
 ): Promise<string> {
-  return generateDogImage(imageDataUrl, analysis);
+  return generateDogImage(imageDataUrl, analysis, style);
 }

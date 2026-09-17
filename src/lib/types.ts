@@ -1,3 +1,5 @@
+export type PortraitStyle = "split" | "dog";
+
 export type GenerateErrorCode =
   | "no_image"
   | "unsupported"

@@ -180,12 +180,46 @@
 .camera-waiting {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0;
   font-size: var(--text-sm);
   color: color-mix(in oklab, var(--color-primary-fg) 80%, transparent);
+}
+
+.camera-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding-bottom: 8%;
+}
+
+.camera-guide-oval {
+  width: min(62vw, 16.5rem);
+  height: min(82vw, 21.5rem);
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklab, var(--color-primary-fg) 88%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-camera) 35%, transparent) inset,
+    0 0 0 9999px color-mix(in oklab, var(--color-camera) 58%, transparent);
+}
+
+.camera-guide-copy {
+  margin: 1rem 0 0;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-camera) 72%, transparent);
+  color: var(--color-primary-fg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .camera-footer {
@@ -248,6 +282,61 @@
   border-radius: 999px;
   background: var(--color-primary-fg);
   box-shadow: inset 0 0 0 6px var(--color-camera), 0 0 0 3px var(--color-primary-fg);
+}
+
+.style-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.style-toggle button {
+  min-height: 2.75rem;
+  border-radius: var(--radius-md);
+  padding: 0.45rem 0.6rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-muted);
+  line-height: 1.15;
+}
+
+.style-toggle button.is-on {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+}
+
+.share-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: color-mix(in oklab, var(--color-fg) 42%, transparent);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 5.5rem);
+}
+
+.share-dismiss {
+  position: absolute;
+  inset: 0;
+}
+
+.share-card {
+  position: relative;
+  z-index: 1;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  background: var(--color-bg);
+  padding: 1.25rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  animation: sheet-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.share-grid {
+  display: grid;
+  gap: 0.75rem;
 }
 
 .pay-sheet {

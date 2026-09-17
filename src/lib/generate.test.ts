@@ -24,6 +24,14 @@ describe("generate input", () => {
       requestId: "11111111-2222-3333-4444-555555555555",
     });
     assert.equal(parsed.requestId, "11111111-2222-3333-4444-555555555555");
+    assert.equal(parsed.style, "split");
+  });
+
+  it("defaults unknown styles to split", () => {
+    const parsed = parseGenerateInput({ image: "x", style: "hybrid" });
+    assert.equal(parsed.style, "split");
+    const dog = parseGenerateInput({ image: "x", style: "dog" });
+    assert.equal(dog.style, "dog");
   });
 });
 

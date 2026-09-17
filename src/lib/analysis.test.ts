@@ -162,9 +162,19 @@ describe("generation prompt", () => {
     assert.match(prompt, /downward-curving moustache/i);
     assert.match(prompt, /PRIORITY ORDER/i);
     assert.match(prompt, /1 gaze direction/i);
+    assert.match(prompt, /SEAMLESS JOIN/i);
+    assert.match(prompt, /no seam/i);
     assert.match(prompt, /COMPOSITION LOCK/i);
     assert.doesNotMatch(prompt, /Forbidden: human skin/);
     assert.doesNotMatch(prompt, /puppy-like hero lighting/i);
+  });
+
+  it("can ask for a full dog instead of a split", () => {
+    const parsed = parseAnalysis(valid);
+    assert.ok(parsed);
+    const prompt = buildGenerationPrompt(parsed, "", "dog");
+    assert.match(prompt, /Full canine anatomy/i);
+    assert.doesNotMatch(prompt, /VERTICAL SPLIT PORTRAIT/i);
   });
 });
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { findBreed, breedCatalogForPrompt } from "./breeds.ts";
-import type { AnalysisResult } from "./types.ts";
+import type { AnalysisResult, PortraitStyle } from "./types.ts";
 
 const analysisSchema = z.object({
   validHuman: z.boolean(),
@@ -78,15 +78,27 @@ function numbered(items: string[]): string {
   return items.map((item, index) => `${index + 1}. ${item}`).join(" ");
 }
 
-export function buildGenerationPrompt(analysis: AnalysisResult, extra = ""): string {
+export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", style: PortraitStyle = "split"): string {
   const anchors = analysis.identityAnchors;
+  const split = style !== "dog";
+  const composition = split
+    ? [
+        `Create a photorealistic VERTICAL SPLIT PORTRAIT of the supplied person as half human, half ${analysis.breedName} (${analysis.breedId}).`,
+        "ONE head, one photograph. Split the face on the exact vertical midline.",
+        "LEFT HALF: this person's real human face — skin, eye, brow, hair, ear, expression. Do not replace or cartoon the human half.",
+        `RIGHT HALF: a photorealistic ${analysis.breedName} — canine skull, fur, ear, muzzle on that side only. Same eye height, same gaze, same lighting as the human half.`,
+        "The joke of the image is likeness: a viewer should instantly think look how similar I became.",
+        "SEAMLESS JOIN: melt the two halves so NO seam, cut, knife-edge, gap, or collage line is visible. Skin becomes fur across a soft 8-12 percent transition at the midline. Pores, grain, lighting direction, color temperature, and focus stay continuous. Not two photos taped together.",
+        "The halves must join as one continuous portrait, not two photos glued together, not a collage, not a costume, not a full dog.",
+        "THIS PERSON AS THIS BREED on the dog half. Adapt the breed to the person.",
+      ]
+    : [
+        `Create a photorealistic portrait of a real ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
+        "Full canine anatomy. Not a hybrid, not a costume, not a split face, not anthropomorphic.",
+        "THIS PERSON AS THIS BREED. Adapt the breed to the person so a viewer thinks look how similar I became.",
+      ];
   return [
-    `Create a photorealistic VERTICAL SPLIT PORTRAIT of the supplied person as half human, half ${analysis.breedName} (${analysis.breedId}).`,
-    "ONE head, one photograph. Split the face on the exact vertical midline.",
-    "LEFT HALF: this person's real human face — skin, eye, brow, hair, ear, expression. Do not replace or cartoon the human half.",
-    `RIGHT HALF: a photorealistic ${analysis.breedName} — canine skull, fur, ear, muzzle on that side only. Same eye height, same gaze, same lighting as the human half.`,
-    "The halves must join as one continuous portrait, not two photos glued together, not a collage, not a costume, not a full dog.",
-    "THIS PERSON AS THIS BREED on the dog half. Adapt the breed to the person.",
+    ...composition,
     "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 gaze direction and visual focus on BOTH eyes, 2 eye spacing and eye relationship across the split, 3 head pose and camera relationship, 4 overall facial/head geometry, 5 distinctive facial hair/fur translation on the dog half, 6 expression, 7 hair/fur silhouette, 8 characteristic asymmetry, 9 color relationships, 10 breed purity on the dog half.",
     anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog half): ${numbered(anchors)}` : "",
     analysis.gaze && `Gaze: ${analysis.gaze} — both the human eye and the dog eye look the same direction.`,
@@ -95,16 +107,21 @@ export function buildGenerationPrompt(analysis: AnalysisResult, extra = ""): str
     analysis.headPose && `Head pose: ${analysis.headPose} — keep yaw, pitch, roll, tilt, and camera angle.`,
     analysis.facialGeometry && `Face geometry: ${analysis.facialGeometry}`,
     analysis.expression && `Expression: ${analysis.expression}`,
-    analysis.hairAndFurnishings && `Hair/furnishings: ${analysis.hairAndFurnishings} — human hair on the left, translated coat/furnishings on the right.`,
+    analysis.hairAndFurnishings &&
+      `Hair/furnishings: ${analysis.hairAndFurnishings} — ${split ? "human hair on the left, translated coat/furnishings on the right." : "translate into coat and furnishings."}`,
     analysis.colorMap && `Color map: ${analysis.colorMap}`,
     analysis.coat && `Coat on the dog half: ${analysis.coat}`,
     analysis.visibleTraits && `Visible traits: ${analysis.visibleTraits}`,
     analysis.renderBrief,
     "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction from the source photo.",
     "Do not beautify, symmetrize, smile-ify, or replace with studio hero lighting.",
-    "Forbidden: full-body dog, two separate images, side-by-side diptych with a gap, collage, text, watermark, logo, extra faces, costume hood.",
+    split
+      ? "Forbidden: visible seam or hard midline cut, full-body dog, two separate images, side-by-side diptych with a gap, collage, text, watermark, logo, extra faces, costume hood."
+      : "Forbidden: human skin, split face, collage, text, watermark, logo, extra faces, costume hood.",
     extra,
-    "Square 1:1 head-and-shoulders split portrait: left human, right dog, immediately readable as this person.",
+    split
+      ? "Square 1:1 head-and-shoulders split portrait: left human, right dog, seamlessly fused, immediately readable as this person."
+      : "Square 1:1 head-and-shoulders canine portrait, immediately readable as this person as this breed.",
   ]
     .filter((part) => part && part.trim().length > 0)
     .join(" ");

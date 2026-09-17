@@ -119,7 +119,7 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
         setReady(true);
         setHint(
           actual === "user"
-            ? "Selfie. Tryck Vänd kamera för att fota en vän."
+            ? "Selfie. Vänd kameran för att fota en vän."
             : "Bakre kamera. Fota din vän.",
         );
       }
@@ -213,6 +213,12 @@ export function CameraCapture({ onCapture, onClose, onUnavailable }: CameraCaptu
         {!ready ? (
           <p className="camera-waiting">Startar kamera …</p>
         ) : null}
+        <div className="camera-guide" aria-hidden="true">
+          <div className="camera-guide-oval" />
+          <p className="camera-guide-copy">
+            {previewFacing === "user" ? "Håll huvudet i rutan" : "Håll vännens huvud i rutan"}
+          </p>
+        </div>
       </div>
       <div className="camera-footer">
         <p className="camera-hint">{hint}</p>

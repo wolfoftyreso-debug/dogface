@@ -13,9 +13,10 @@ import {
   saveHistoryItem,
 } from "@/lib/history";
 import { PhotoError, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
-import { ERROR_MESSAGES, type HistoryItem } from "@/lib/types";
+import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
+import { ShareSheet } from "@/components/share-sheet";
 
 const GENERATE_WAIT_MS = 210_000;
 
@@ -71,6 +72,8 @@ export function HundtvillingApp() {
   const [paidNotice, setPaidNotice] = useState<string | null>(null);
   const [latest, setLatest] = useState<HistoryItem | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
+  const [style, setStyle] = useState<PortraitStyle>("split");
 
   useEffect(() => {
     void listHistory().then(setHistory).catch(() => undefined);
@@ -188,7 +191,7 @@ export function HundtvillingApp() {
     const requestId = crypto.randomUUID();
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 8000);
     try {
-      const generatePromise = generateDogTwin({ data: { image, requestId } });
+      const generatePromise = generateDogTwin({ data: { image, requestId, style } });
       const poll = (async () => {
         for (let i = 0; i < 42; i += 1) {
           await new Promise((resolve) => window.setTimeout(resolve, 5000));
@@ -281,35 +284,6 @@ export function HundtvillingApp() {
     }
   }
 
-  async function shareImage(item: HistoryItem) {
-    setShareHint(null);
-    try {
-      const res = await fetch(item.imageDataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], filenameForBreed(item.breed), {
-        type: blob.type || "image/jpeg",
-      });
-      const payload = {
-        title: "Min hundtvilling",
-        text: `Hälften jag, hälften ${item.breed}.`,
-        files: [file],
-      };
-      if (navigator.share && navigator.canShare?.(payload)) {
-        await navigator.share(payload);
-        return;
-      }
-      if (navigator.share) {
-        await navigator.share({ title: payload.title, text: payload.text });
-        return;
-      }
-      await saveImage(item);
-      setShareHint("Bilden är sparad. Delning finns inte här.");
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return;
-      setShareHint("Kunde inte dela. Du kan spara bilden i stället.");
-    }
-  }
-
   const shown = latest ? [latest, ...history.filter((item) => item.id !== latest.id)] : history;
   const remainingLabel =
     remaining === null
@@ -347,7 +321,7 @@ export function HundtvillingApp() {
             <div className="text-center">
               <h1 className="font-display text-3xl tracking-tight italic">Vilken hund är du?</h1>
               <p className="mt-3 text-base text-muted">
-                Lägg till ett foto. Vi gör en bild som är hälften du, hälften hund.
+                Välj splitscreen: hälften du, hälften hund. Det är grejen — titta vad lik du blev.
                 <br />
                 Din första bild är gratis.
               </p>
@@ -366,7 +340,7 @@ export function HundtvillingApp() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium tracking-wide text-muted uppercase">Hälften du, hälften</p>
+                <p className="text-xs font-medium tracking-wide text-muted uppercase">Titta vad lik du blev</p>
                 <h2 className="mt-1 font-display text-2xl tracking-tight">{item.breed}</h2>
                 {item.reason ? <p className="mt-2 text-base text-muted">{item.reason}</p> : null}
               </div>
@@ -375,7 +349,7 @@ export function HundtvillingApp() {
                   <Download className="size-4" strokeWidth={1.75} />
                   Spara
                 </Button>
-                <Button variant="secondary" onClick={() => void shareImage(item)} aria-label="Dela bild">
+                <Button variant="secondary" onClick={() => setShareItem(item)} aria-label="Dela till story">
                   <Share2 className="size-4" strokeWidth={1.75} />
                   Dela
                 </Button>
@@ -468,6 +442,26 @@ export function HundtvillingApp() {
           Använd ett foto du har rätt att använda. Bilden skickas till vår AI-leverantör för att skapa din
           hundtvilling.
         </p>
+        <div className="style-toggle mb-3" role="radiogroup" aria-label="Bildstil">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={style === "split"}
+            className={style === "split" ? "is-on" : undefined}
+            onClick={() => setStyle("split")}
+          >
+            Splitscreen
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={style === "dog"}
+            className={style === "dog" ? "is-on" : undefined}
+            onClick={() => setStyle("dog")}
+          >
+            Hela hunden
+          </button>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Button variant="secondary" onClick={openCamera} aria-label="Ta foto">
             <Camera className="size-4" strokeWidth={1.75} />
@@ -535,6 +529,9 @@ export function HundtvillingApp() {
           onClose={() => setCameraOpen(false)}
           onUnavailable={fallbackNativeCamera}
         />
+      ) : null}
+      {shareItem ? (
+        <ShareSheet item={shareItem} onClose={() => setShareItem(null)} onHint={setShareHint} />
       ) : null}
     </main>
   );
