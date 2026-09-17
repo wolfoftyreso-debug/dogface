@@ -634,6 +634,11 @@ export function DoggStyleApp() {
         <Button className="mt-3" onClick={() => void onPrimary()} disabled={working || (!needsPay && !canGenerate)}>
           {primaryLabel}
         </Button>
+        <p className="mt-2 text-center text-xs text-muted">
+          {needsPay
+            ? "Pay on the website with Stripe. Not an App Store purchase."
+            : "Create sends this photo to our AI to make your dog."}
+        </p>
       </div>
 
       <input
