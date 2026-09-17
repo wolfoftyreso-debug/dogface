@@ -202,7 +202,7 @@
 .hero-tag {
   position: absolute;
   left: 0.75rem;
-  bottom: 0.75rem;
+  top: 0.75rem;
   margin: 0;
   padding: 0.28rem 0.6rem;
   border-radius: 999px;
@@ -211,6 +211,50 @@
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.photo-mark {
+  position: absolute;
+  left: 0.7rem;
+  bottom: 0.7rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.7rem 0.28rem 0.28rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-surface) 92%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-fg) 10%, transparent);
+  pointer-events: none;
+}
+
+.photo-mark img {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1.5px var(--color-primary);
+  background: var(--color-bg-subtle);
+}
+
+.photo-mark p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: var(--color-fg);
+}
+
+.photo-mark em {
+  display: block;
+  color: var(--color-primary);
+  font-style: normal;
+  font-size: 0.68em;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .photo-frame {

@@ -1,3 +1,5 @@
+import { drawBrandLockup } from "./stamp-brand";
+
 export type StoryTarget = "instagram" | "snapchat" | "facebook" | "system";
 
 const APP_SCHEME: Record<Exclude<StoryTarget, "system">, string> = {
@@ -97,9 +99,20 @@ export async function composeStoryCard(imageDataUrl: string, breed: string): Pro
     ctx.fillText(line, width / 2, cardY + card + 140 + index * 36);
   });
 
-  ctx.fillStyle = "#ff4d2e";
-  ctx.font = "700 34px ui-rounded, system-ui, sans-serif";
-  ctx.fillText("Dogg Style", width / 2, height - 120);
+  let logo: HTMLImageElement | null = null;
+  try {
+    logo = await loadImage("/logo-mark.png");
+  } catch {
+    logo = null;
+  }
+  try {
+    await document.fonts.load("700 22px Fredoka");
+  } catch {
+    // system rounded fonts still read
+  }
+  const brandScale = 1.35;
+  const brandH = 72 * brandScale;
+  drawBrandLockup(ctx, (width - 210) / 2, height - 80 - brandH, brandScale, logo);
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
   if (!blob) throw new Error("blob");

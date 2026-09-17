@@ -14,6 +14,7 @@ import {
 } from "@/lib/history";
 import { PhotoError, PHOTO_ACCEPT, isAllowedPhotoType, preprocessPhoto } from "@/lib/image";
 import { savePhoto } from "@/lib/save-photo";
+import { stampBrand, stampBrandAll } from "@/lib/stamp-brand";
 import { ERROR_MESSAGES, type HistoryItem, type PortraitStyle } from "@/lib/types";
 import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
@@ -198,21 +199,22 @@ export function HundtvillingApp() {
       splitDataUrl: response.splitDataUrl,
       dogDataUrl: response.dogDataUrl,
     };
-    setLatest(item);
-    latestRef.current = item;
-    setStyle(response.splitDataUrl ? "split" : "dog");
+    const branded = await stampBrandAll(item).catch(() => item);
+    setLatest(branded);
+    latestRef.current = branded;
+    setStyle(branded.splitDataUrl ? "split" : "dog");
     setRemaining(response.remaining);
     setFreeRemaining(0);
     setPreview(null);
     await clearDraft();
     try {
-      setHistory(await saveHistoryItem(item));
+      setHistory(await saveHistoryItem(branded));
     } catch {
       try {
-        const slim = { ...item, dogDataUrl: undefined };
+        const slim = { ...branded, dogDataUrl: undefined };
         setHistory(await saveHistoryItem(slim));
       } catch {
-        setHistory((current) => [item, ...current].slice(0, 10));
+        setHistory((current) => [branded, ...current].slice(0, 10));
       }
     }
     return true;
@@ -363,7 +365,7 @@ export function HundtvillingApp() {
     setSaving(true);
     setShareHint(null);
     try {
-      const result = await savePhoto(displayedImage(item), filenameForBreed(item.breed));
+      const result = await savePhoto(await stampBrand(displayedImage(item)), filenameForBreed(item.breed));
       if (!result.ok) return;
       if (result.mode === "downloaded") setShareHint("Photo saved.");
       if (result.mode === "press") setSavePressUrl(result.objectUrl);
@@ -418,6 +420,7 @@ export function HundtvillingApp() {
                   className="size-full object-cover"
                 />
                 <p className="hero-tag">Example</p>
+                <PhotoMark />
               </div>
             </div>
             <h1 className="text-center font-display text-3xl tracking-tight">Which dog are you?</h1>
@@ -646,6 +649,18 @@ export function HundtvillingApp() {
         />
       ) : null}
     </main>
+  );
+}
+
+function PhotoMark() {
+  return (
+    <div className="photo-mark">
+      <img src="/logo-mark.png" alt="" />
+      <p>
+        Dogg
+        <em>Style</em>
+      </p>
+    </div>
   );
 }
 
