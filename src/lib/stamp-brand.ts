@@ -15,6 +15,44 @@ async function loadLogo(): Promise<HTMLImageElement | null> {
   }
 }
 
+export function drawBreedLabel(
+  ctx: CanvasRenderingContext2D,
+  breed: string,
+  x: number,
+  y: number,
+  scale: number,
+  maxWidth: number,
+): { width: number; height: number } | null {
+  const label = breed.trim();
+  if (!label) return null;
+  const boxH = 52 * scale;
+  const padX = 22 * scale;
+  let fontSize = 26 * scale;
+  const minSize = 15 * scale;
+  ctx.font = `700 ${fontSize}px Fredoka, ui-rounded, system-ui, sans-serif`;
+  while (fontSize > minSize && ctx.measureText(label).width + padX * 2 > maxWidth) {
+    fontSize -= 1;
+    ctx.font = `700 ${fontSize}px Fredoka, ui-rounded, system-ui, sans-serif`;
+  }
+  const textW = Math.min(ctx.measureText(label).width, Math.max(0, maxWidth - padX * 2));
+  const boxW = Math.min(maxWidth, textW + padX * 2);
+
+  ctx.fillStyle = "rgba(255, 251, 243, 0.94)";
+  ctx.beginPath();
+  ctx.roundRect(x, y, boxW, boxH, boxH / 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(42, 20, 8, 0.1)";
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2a1408";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.font = `700 ${fontSize}px Fredoka, ui-rounded, system-ui, sans-serif`;
+  ctx.fillText(label, x + padX, y + boxH / 2, Math.max(0, boxW - padX * 2));
+  return { width: boxW, height: boxH };
+}
+
 export function drawBrandLockup(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -71,10 +109,11 @@ export function drawBrandLockup(
   return { width: boxW, height: boxH };
 }
 
-export async function stampBrand(dataUrl: string): Promise<string> {
+export async function stampBrand(dataUrl: string, breed = ""): Promise<string> {
   const photo = await loadImage(dataUrl);
   const logo = await loadLogo();
   try {
+    await document.fonts.load("700 26px Fredoka");
     await document.fonts.load("700 22px Fredoka");
     await document.fonts.load("650 15px Fredoka");
   } catch {
@@ -89,19 +128,23 @@ export async function stampBrand(dataUrl: string): Promise<string> {
   const scale = Math.max(canvas.width, canvas.height) / 1080;
   const boxH = 72 * scale;
   const pad = 36 * scale;
-  drawBrandLockup(ctx, pad, canvas.height - pad - boxH, scale, logo);
+  const brandY = canvas.height - pad - boxH;
+  drawBrandLockup(ctx, pad, brandY, scale, logo);
+  const breedH = 52 * scale;
+  const gap = 12 * scale;
+  drawBreedLabel(ctx, breed, pad, brandY - gap - breedH, scale, canvas.width - pad * 2);
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-export async function stampBrandAll<T extends { imageDataUrl: string; splitDataUrl?: string; dogDataUrl?: string }>(
-  item: T,
-): Promise<T> {
+export async function stampBrandAll<
+  T extends { imageDataUrl: string; breed?: string; splitDataUrl?: string; dogDataUrl?: string },
+>(item: T): Promise<T> {
   const stamped = new Map<string, string>();
   async function once(src: string | undefined): Promise<string | undefined> {
     if (!src) return src;
     const hit = stamped.get(src);
     if (hit) return hit;
-    const next = await stampBrand(src);
+    const next = await stampBrand(src, item.breed ?? "");
     stamped.set(src, next);
     return next;
   }
