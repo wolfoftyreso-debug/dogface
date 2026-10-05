@@ -574,9 +574,9 @@ export function DoggStyleApp() {
         ) : null}
 
         {preview ? (
-          <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
+          <div className="mx-auto w-fit max-w-full overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
             <div className="photo-frame">
-              <img src={preview} alt="Chosen photo" className="size-full object-contain" />
+              <img src={preview} alt="Chosen photo" />
             </div>
             {!working ? (
               <button
