@@ -469,6 +469,7 @@ export function DoggStyleApp() {
   }
 
   const recents = history.filter((item) => item.id !== latest?.id);
+  const onResult = Boolean(latest) && !preview && !working;
 
   return (
     <main className="app-shell has-dock flex flex-col">
@@ -507,6 +508,7 @@ export function DoggStyleApp() {
               </div>
             </div>
             <h1 className="text-center font-display text-3xl tracking-tight">Which dog are you?</h1>
+            <p className="text-center text-sm text-muted">A clear selfie works best.</p>
             {history.length ? <Recents items={history} onPick={openHistoryItem} /> : null}
           </div>
         ) : null}
@@ -515,7 +517,7 @@ export function DoggStyleApp() {
             <article className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
                 <div className="photo-square">
-                  <img src={displayedImage(latest)} alt={latest.breed} className="size-full object-contain" />
+                  <img src={displayedImage(latest)} alt={latest.breed} className="size-full object-cover" />
                 </div>
               </div>
               <div>
@@ -543,21 +545,6 @@ export function DoggStyleApp() {
                   </button>
                 </div>
               ) : null}
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="secondary"
-                  onClick={() => void saveImage(latest)}
-                  disabled={saving}
-                  aria-label="Save photo"
-                >
-                  <Download className="size-4" strokeWidth={1.75} />
-                  {saving ? "Saving …" : "Save"}
-                </Button>
-                <Button variant="secondary" onClick={() => openShare(latest)} aria-label="Share to story">
-                  <Share2 className="size-4" strokeWidth={1.75} />
-                  Share
-                </Button>
-              </div>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -599,7 +586,6 @@ export function DoggStyleApp() {
             <p className="text-base font-medium">
               {playMode === "eat" ? "Gotcha." : workStep === "read" ? "Reading the photo …" : "Making your dog …"}
             </p>
-            {playMode === "fetch" ? <p className="text-sm text-muted">Usually about a minute.</p> : null}
           </div>
         ) : null}
 
@@ -641,26 +627,46 @@ export function DoggStyleApp() {
       </div>
 
       <div className="sticky bottom-0 -mx-5 mt-auto border-t border-border bg-bg/92 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
-        <div className="grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={openCamera} aria-label="Take photo">
-            <Camera className="size-4" strokeWidth={1.75} />
-            Camera
-          </Button>
-          <Button variant="secondary" onClick={() => libraryRef.current?.click()} aria-label="Choose photo">
-            <Images className="size-4" strokeWidth={1.75} />
-            Photo
-          </Button>
-        </div>
-        <Button className="mt-3" onClick={() => void onPrimary()} disabled={working || (!needsPay && !canGenerate)}>
-          {primaryLabel}
-        </Button>
-        <p className="mt-2 text-center text-xs text-muted">
-          {needsPay
-            ? isNativeApp()
-              ? "Pay with Apple In-App Purchase. $2.99 for 5 photos."
-              : "Pay on the website with Stripe. Not an App Store purchase."
-            : "Create sends this photo to our AI to make your dog."}
-        </p>
+        {working ? (
+          <p className="py-3 text-center text-sm text-muted">Usually about a minute. Stay on this screen.</p>
+        ) : onResult && latest && !needsPay ? (
+          <>
+            <div className="grid grid-cols-[1fr_1.4fr] gap-3">
+              <Button variant="secondary" onClick={() => void saveImage(latest)} disabled={saving} aria-label="Save photo">
+                <Download className="size-4" strokeWidth={1.75} />
+                {saving ? "Saving …" : "Save"}
+              </Button>
+              <Button onClick={() => openShare(latest)} aria-label="Share to story">
+                <Share2 className="size-4" strokeWidth={1.75} />
+                Share
+              </Button>
+            </div>
+            <p className="mt-2 text-center text-xs text-muted">Share includes the photo.</p>
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="secondary" onClick={openCamera} aria-label="Take photo">
+                <Camera className="size-4" strokeWidth={1.75} />
+                Camera
+              </Button>
+              <Button variant="secondary" onClick={() => libraryRef.current?.click()} aria-label="Choose photo">
+                <Images className="size-4" strokeWidth={1.75} />
+                Photo
+              </Button>
+            </div>
+            <Button className="mt-3" onClick={() => void onPrimary()} disabled={!needsPay && !canGenerate}>
+              {primaryLabel}
+            </Button>
+            <p className="mt-2 text-center text-xs text-muted">
+              {needsPay
+                ? isNativeApp()
+                  ? "Pay with Apple In-App Purchase. $2.99 for 5 photos."
+                  : "Pay on the website with Stripe. Not an App Store purchase."
+                : "Create sends this photo to our AI to make your dog."}
+            </p>
+          </>
+        )}
       </div>
 
       <input
