@@ -1,6 +1,7 @@
 import { getSql } from "./db";
 import type { ReservedKind } from "./entitlement.server";
 import { releaseCredit } from "./entitlement.server";
+import { currentVisitorId } from "./session.server";
 import type { GenerateErrorCode } from "./types";
 
 export type JobStatus =
@@ -157,6 +158,15 @@ export async function markDelivered(id: string, visitorId: string): Promise<void
     set status = 'delivered', updated_at = now()
     where id = ${id} and visitor_id = ${visitorId} and status = 'ready'
   `;
+}
+
+export async function eraseVisitorPhotos(): Promise<{ ok: true }> {
+  const visitorId = await currentVisitorId();
+  if (!visitorId) return { ok: true };
+  const sql = await getSql();
+  await sql`delete from generations where visitor_id = ${visitorId}`;
+  await sql`delete from rate_events where key = ${"gen:" + visitorId} or key = ${"ip:" + visitorId}`;
+  return { ok: true };
 }
 
 export async function expireStaleJobs(): Promise<void> {

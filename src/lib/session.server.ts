@@ -86,6 +86,17 @@ function mapVisitor(row: VisitorRow): Visitor {
   };
 }
 
+export async function currentVisitorId(): Promise<string | null> {
+  const existing = getCookie(COOKIE)?.trim();
+  if (!existing || existing.length < 32 || existing.length > 128) return null;
+  const sql = await getSql();
+  const tokenHash = sha256(existing);
+  const rows = await sql<{ id: string }>`
+    select id from visitors where token_hash = ${tokenHash} or id = ${tokenHash} limit 1
+  `;
+  return rows[0]?.id ?? null;
+}
+
 export async function getVisitorById(id: string): Promise<Visitor | null> {
   const sql = await getSql();
   const rows = await sql<VisitorRow>`

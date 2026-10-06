@@ -8,6 +8,8 @@
   <string>Dogg Style</string>
   <key>NSCameraUsageDescription</key>
   <string>Dogg Style uses the camera so you can take a selfie to turn into a dog portrait. The photo is sent to our AI to generate your result and is not posted publicly. You can pick a photo from your library instead.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Dogg Style opens your photo library so you can pick a picture to turn into a dog portrait. You can use the camera instead.</string>
   <key>NSPhotoLibraryAddUsageDescription</key>
   <string>Dogg Style saves your dog portrait to Photos when you tap Save.</string>
   <key>ITSAppUsesNonExemptEncryption</key>

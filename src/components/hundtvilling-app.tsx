@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Camera, Copy, Download, ImagePlus, Images, Info, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateDogTwin, getGeneration } from "@/lib/generate";
-import { confirmAppleIap, confirmCheckout, createCheckout, getBalance } from "@/lib/payment";
+import { confirmAppleIap, confirmCheckout, createCheckout, deleteMyData, getBalance } from "@/lib/payment";
 import { isNativeApp, nativePurchasePack } from "@/lib/native-platform";
 import {
   clearAllLocalPhotos,
@@ -26,6 +26,15 @@ import { FetchPlay } from "@/components/fetch-play";
 const GENERATE_WAIT_MS = 240_000;
 const JOB_KEY = "ht_job_id";
 const EAT_MS = 1350;
+const GATE_KEY = "doggstyle-gates";
+
+function gatesAccepted(): boolean {
+  try {
+    return localStorage.getItem(GATE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 function jobKey(id: string | null): void {
   try {
@@ -71,6 +80,9 @@ export function DoggStyleApp() {
   const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
   const [style, setStyle] = useState<PortraitStyle>("dog");
   const [infoOpen, setInfoOpen] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [ageOk, setAgeOk] = useState(false);
+  const [aiOk, setAiOk] = useState(false);
   const [savePressUrl, setSavePressUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [playMode, setPlayMode] = useState<"fetch" | "eat">("fetch");
@@ -412,6 +424,12 @@ export function DoggStyleApp() {
       setError(ERROR_MESSAGES.no_image);
       return;
     }
+    if (!gatesAccepted()) {
+      setAgeOk(false);
+      setAiOk(false);
+      setGateOpen(true);
+      return;
+    }
     await runGeneration(preview);
   }
 
@@ -721,6 +739,41 @@ export function DoggStyleApp() {
           </div>
         </div>
       ) : null}
+      {gateOpen ? (
+        <div className="share-sheet" role="dialog" aria-label="Before you create" aria-modal="true">
+          <button type="button" className="share-dismiss" aria-label="Close" onClick={() => setGateOpen(false)} />
+          <div className="share-card">
+            <h2 className="font-display text-2xl tracking-tight">Before we make your dog</h2>
+            <p className="mt-2 text-sm text-muted">
+              The photo goes to our server and to xAI, a third-party AI, only to create the portrait. It is not
+              posted publicly, sold, or used for ads.
+            </p>
+            <label className="mt-4 flex items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-1" checked={ageOk} onChange={(e) => setAgeOk(e.target.checked)} />
+              I’m 13 or older.
+            </label>
+            <label className="mt-3 flex items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-1" checked={aiOk} onChange={(e) => setAiOk(e.target.checked)} />
+              Send this photo to xAI to make the dog portrait.
+            </label>
+            <Button
+              className="mt-5"
+              disabled={!ageOk || !aiOk}
+              onClick={() => {
+                try {
+                  localStorage.setItem(GATE_KEY, "1");
+                } catch {
+                  // still continue this once
+                }
+                setGateOpen(false);
+                if (preview) void runGeneration(preview);
+              }}
+            >
+              Continue
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {infoOpen ? (
         <InfoSheet
           onClose={() => setInfoOpen(false)}
@@ -729,15 +782,27 @@ export function DoggStyleApp() {
             setRestoreOpen(true);
           }}
           onClearPhotos={() => {
-            if (!window.confirm("Delete all Dogg Style photos stored on this phone? Credits stay.")) return;
-            void clearAllLocalPhotos().then(() => {
+            if (
+              !window.confirm(
+                "Delete dog photos on this phone and any copies still on our server? Purchases stay so you can restore them. This is not a refund.",
+              )
+            ) {
+              return;
+            }
+            void (async () => {
+              await clearAllLocalPhotos();
+              try {
+                await deleteMyData();
+              } catch {
+                // local photos are already gone
+              }
               setHistory([]);
               setLatest(null);
               latestRef.current = null;
               setPreview(null);
               setInfoOpen(false);
-              setShareHint("Photos on this phone were deleted.");
-            });
+              setShareHint("Your photos were deleted.");
+            })();
           }}
         />
       ) : null}
@@ -801,7 +866,7 @@ function InfoSheet({
             Restore purchase
           </button>
           <button type="button" className="info-link" onClick={onClearPhotos}>
-            Clear photos on this phone
+            Delete my photos
           </button>
         </nav>
       </div>

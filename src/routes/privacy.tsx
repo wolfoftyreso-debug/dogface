@@ -11,10 +11,12 @@ function PrivacyPage() {
         entertainment, not a scientific or medical product. It is not directed at children under 13.
       </p>
       <p>
-        By tapping Create you consent to sending that photo for this purpose. You can refuse camera
-        access and pick a library photo instead. Paid photos do not require camera access. You can
-        withdraw consent by not sending more photos and by deleting what’s stored on this phone
-        (Info → Clear photos on this phone) and this site’s data in the browser.
+        The first time you tap Create, the app asks you to confirm you are 13 or older and to allow
+        sending that photo to our server and to xAI. You can say no. Camera access is optional: you
+        can pick a library photo instead. You can withdraw consent by not sending more photos and by
+        using Info → Delete my photos, which removes photos on this phone and finished results still
+        stored for your session on our server. Purchase records stay so a restore can work. That is
+        not a refund, and there is no account to delete.
       </p>
       <p>
         <strong className="font-semibold text-fg">Camera.</strong> If you tap Camera, the browser asks
@@ -44,10 +46,9 @@ function PrivacyPage() {
         provider logs can live longer; we don’t promise every copy vanishes at that exact time.
       </p>
       <p>
-        Photo history lives only in this browser (up to 10). It does not sync. Info → Clear photos
-        on this phone deletes that history and drafts. Clearing this site’s data in Safari also
-        deletes the session cookie and unused credits on this device. That is how you request
-        deletion: there is no account to delete.
+        Photo history lives only in this browser (up to 10). It does not sync. Info → Delete my
+        photos removes that history, drafts, and any result still buffered on our server for this
+        session. Clearing this site’s data in Safari also deletes the session cookie.
       </p>
       <p>
         Without a verified identity we can’t guarantee exactly one free photo per person. A new

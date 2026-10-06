@@ -42,7 +42,7 @@
   "keywords": "dog,selfie,photo,ai,portrait,pet,fun,filter,camera,twin",
   "promotionalText": "First dog photo is free. Five more for $2.99 — no subscription.",
   "whatsNew": "First App Store release. Apple In-App Purchase for extra photos, restore, and on-device photo deletion.",
-  "reviewNotes": "No login. First generation is free — please use Camera or Photo, then Create. Extra photos are a $2.99 consumable IAP (com.doggstyle.pack5). Restore is under Info. Website Stripe checkout is not used in this iOS binary. Support: Info → Support, or the Support URL. Demo photo is not required; any clear photo of one person works.",
+  "reviewNotes": "No login and no account. First generation is free: Camera or Photo, then Create. The first Create asks for age 13+ and permission to send the photo to xAI. Extra photos are a $2.99 consumable IAP (com.doggstyle.pack5). Restore is under Info. Info → Delete my photos removes on-device photos and server copies for this session; it does not refund. Website Stripe checkout is not used in this iOS binary. Support: Info → Support. Any clear photo of one person works.",
   "exportCompliance": {
     "usesNonExemptEncryption": false,
     "ITSAppUsesNonExemptEncryption": false
@@ -83,6 +83,6 @@
     "Xcode on a Mac: npx cap add ios, copy native/ios/IapPlugin.swift, Info-usage.plist keys, PrivacyInfo.xcprivacy, DoggStyle.storekit",
     "App Store Connect: create IAP com.doggstyle.pack5 as Consumable $2.99",
     "Replace YOUR-DOMAIN in privacy/support URLs with the live site",
-    "Archive and submit from Xcode"
+    "Build with the iOS 26 SDK (required for uploads after 28 April 2026)",
   ]
 }

@@ -30,6 +30,11 @@ export const restorePurchase = createServerFn({ method: "POST" })
     return restoreWithCode(data.code);
   });
 
+export const deleteMyData = createServerFn({ method: "POST" }).handler(async () => {
+  const { eraseVisitorPhotos } = await import("./generation.server.ts");
+  return eraseVisitorPhotos();
+});
+
 export const confirmAppleIap = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
     const raw = input && typeof input === "object" ? (input as { transactionJws?: unknown }) : {};

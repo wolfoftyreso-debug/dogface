@@ -28,8 +28,8 @@ function SupportPage() {
         and we can’t rebuild photo history from the cloud.
       </p>
       <p>
-        To delete photos stored on this device: Info → Clear photos on this phone. That does not
-        refund credits.
+        To delete photos: Info → Delete my photos. That removes them on this phone and any result
+        still stored for your session. It does not refund a purchase or remove the restore code.
       </p>
       <p>Technical errors and invalid photos don’t use a credit. Saving and sharing is always free.</p>
     </LegalPage>
