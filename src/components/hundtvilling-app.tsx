@@ -511,7 +511,7 @@ export function DoggStyleApp() {
         </div>
       </header>
 
-      <div ref={scrollerRef} className="mt-3 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-2">
+      <div ref={scrollerRef} className="app-scroll mt-3 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-2">
         {!latest && !preview && !working ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3">
             <div className="min-h-0 flex-1 overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
@@ -531,7 +531,7 @@ export function DoggStyleApp() {
           </div>
         ) : null}
 
-        {latest ? (
+        {latest && !preview && !working ? (
             <article className="flex flex-col gap-3">
               <div className="overflow-hidden rounded-3xl bg-surface p-2 ring-1 ring-border">
                 <div className="photo-square">

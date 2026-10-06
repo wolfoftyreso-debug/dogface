@@ -38,15 +38,21 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    min-height: 100dvh;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-y;
     background-color: var(--color-bg);
     color: var(--color-fg);
   }
 
   body {
     margin: 0;
-    min-height: 100dvh;
-    background: transparent;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-y;
+    background: var(--color-bg);
     color: var(--color-fg);
     font-family: var(--font-sans);
     line-height: 1.5;
@@ -89,7 +95,22 @@
 }
 
 .app-shell.has-dock {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   padding-bottom: 0;
+}
+
+.app-shell:not(.has-dock) {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.app-scroll {
+  min-height: 0;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .brand {
