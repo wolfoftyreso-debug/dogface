@@ -37,7 +37,7 @@ async function landmarker() {
       return vision.FaceLandmarker.createFromOptions(files, {
         baseOptions: { modelAssetPath: MODEL, delegate: "GPU" },
         runningMode: "IMAGE",
-        numFaces: 1,
+        numFaces: 3,
         outputFaceBlendshapes: false,
         outputFacialTransformationMatrixes: false,
       });
@@ -104,6 +104,21 @@ export function faceFromLandmarks(landmarks: Landmark[]): FaceGeometry | null {
   };
 }
 
+export function largestFace(faces: Landmark[][]): Landmark[] | null {
+  let best: Landmark[] | null = null;
+  let bestArea = 0;
+  for (const landmarks of faces) {
+    const face = faceFromLandmarks(landmarks);
+    if (!face) continue;
+    const area = face.faceWidth * Math.abs(face.chin.y - face.forehead.y);
+    if (area > bestArea) {
+      best = landmarks;
+      bestArea = area;
+    }
+  }
+  return best;
+}
+
 export async function drawGeometryGuide(imageUrl: string, geometry: FaceGeometry): Promise<string | null> {
   const image = await loadImage(imageUrl);
   const longest = Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height);
@@ -148,7 +163,7 @@ export async function detectFaceGeometry(imageUrl: string): Promise<FaceGeometry
   if (!detector) return null;
   const image = await loadImage(imageUrl);
   const result = detector.detect(image);
-  const landmarks = result.faceLandmarks?.[0];
+  const landmarks = largestFace(result.faceLandmarks ?? []);
   if (!landmarks?.length) return null;
   return faceFromLandmarks(landmarks);
 }

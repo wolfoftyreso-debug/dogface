@@ -147,44 +147,73 @@ export type NosePin = {
   chinY: number;
 };
 
-/** Dark nose leather to the right of the seam. The top of the blob wins over a dark beard. */
+/** Largest compact dark blob on the dog side. Specks and wide shadows do not count. */
 export function findCanineNose(raster: Raster, nose: Point, seam: number): Point | null {
   const width = raster.width;
   const height = raster.height;
   if (width < 8 || height < 8) return null;
   const x0 = Math.max(0, seam);
-  const x1 = Math.min(width - 1, Math.round((nose.x + 0.28) * width));
-  const y0 = Math.max(0, Math.round((nose.y - 0.04) * height));
-  const y1 = Math.min(height - 1, Math.round((nose.y + 0.34) * height));
-  const dark = (x: number, y: number) => {
+  const x1 = Math.min(width - 1, Math.round((nose.x + 0.3) * width));
+  const y0 = Math.max(0, Math.round((nose.y - 0.02) * height));
+  const y1 = Math.min(height - 1, Math.round((nose.y + 0.38) * height));
+  const spanX = x1 - x0 + 1;
+  const darkAt = (x: number, y: number) => {
     const i = (y * width + x) * 4;
     const luma = raster.data[i] * 0.2126 + raster.data[i + 1] * 0.7152 + raster.data[i + 2] * 0.0722;
     return luma < 42;
   };
-  let top = -1;
+  const seen = new Uint8Array(spanX * (y1 - y0 + 1));
+  const seenAt = (x: number, y: number) => (y - y0) * spanX + (x - x0);
+  let bestScore = 0;
+  let best: Point | null = null;
   for (let y = y0; y <= y1; y++) {
-    let row = 0;
-    for (let x = x0; x <= x1; x++) if (dark(x, y)) row += 1;
-    if (row >= 3) {
-      top = y;
-      break;
-    }
-  }
-  if (top < 0) return null;
-  const yEnd = Math.min(y1, top + Math.max(3, Math.round(height * 0.08)));
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
-  for (let y = top; y <= yEnd; y++) {
     for (let x = x0; x <= x1; x++) {
-      if (!dark(x, y)) continue;
-      sumX += x;
-      sumY += y;
-      count += 1;
+      if (!darkAt(x, y) || seen[seenAt(x, y)]) continue;
+      const stack = [[x, y]];
+      seen[seenAt(x, y)] = 1;
+      let area = 0;
+      let sumX = 0;
+      let sumY = 0;
+      let left = x;
+      let right = x;
+      let top = y;
+      let bottom = y;
+      while (stack.length) {
+        const [cx, cy] = stack.pop() as [number, number];
+        area += 1;
+        sumX += cx;
+        sumY += cy;
+        left = Math.min(left, cx);
+        right = Math.max(right, cx);
+        top = Math.min(top, cy);
+        bottom = Math.max(bottom, cy);
+        const next = [
+          [cx - 1, cy],
+          [cx + 1, cy],
+          [cx, cy - 1],
+          [cx, cy + 1],
+        ];
+        for (const [nx, ny] of next) {
+          if (nx < x0 || nx > x1 || ny < y0 || ny > y1) continue;
+          const slot = seenAt(nx, ny);
+          if (seen[slot] || !darkAt(nx, ny)) continue;
+          seen[slot] = 1;
+          stack.push([nx, ny]);
+        }
+      }
+      const blobW = right - left + 1;
+      const blobH = bottom - top + 1;
+      if (area < 12 || blobW < 3 || blobH < 3 || blobW > blobH * 4) continue;
+      const centerX = sumX / area;
+      const dist = Math.abs(centerX / width - nose.x);
+      const score = area / (1 + dist * 6);
+      if (score > bestScore) {
+        bestScore = score;
+        best = { x: centerX / (width - 1), y: sumY / area / (height - 1) };
+      }
     }
   }
-  if (count < 8) return null;
-  return { x: sumX / count / (width - 1), y: sumY / count / (height - 1) };
+  return best;
 }
 
 export function nosePinFor(geometry: FaceGeometry, found: Point): NosePin | null {

@@ -128,4 +128,38 @@ describe("split lock", () => {
     const eyePx = eyeY * 40 + seam;
     assert.ok(out.data[eyePx * 4] > 100);
   });
+
+  it("ignores specks and a thin shadow and keeps the nose blob", () => {
+    const source = face();
+    const generated = fill(40, 40, [150, 140, 130, 255]);
+    const seam = seamColumn(40, source.nose.x);
+    for (const [x, y] of [
+      [22, 22],
+      [23, 22],
+      [24, 22],
+      [25, 23],
+    ]) {
+      const i = (y * 40 + x) * 4;
+      generated.data[i] = 0;
+      generated.data[i + 1] = 0;
+      generated.data[i + 2] = 0;
+    }
+    for (let x = seam; x < 38; x++) {
+      const i = (23 * 40 + x) * 4;
+      generated.data[i] = 0;
+      generated.data[i + 1] = 0;
+      generated.data[i + 2] = 0;
+    }
+    for (let y = 26; y <= 32; y++) {
+      for (let x = 22; x <= 28; x++) {
+        const i = (y * 40 + x) * 4;
+        generated.data[i] = 6;
+        generated.data[i + 1] = 6;
+        generated.data[i + 2] = 6;
+      }
+    }
+    const found = findCanineNose(generated, source.nose, seam);
+    assert.ok(found);
+    assert.ok(found.y > 0.62);
+  });
 });
