@@ -90,7 +90,7 @@ export function alignmentCorrection(report: AlignmentReport): string {
     `Nose center is off by ${pct(report.nose)} (target under 3%).`,
     `Mouth center is off by ${pct(report.mouth)} (target under 3%).`,
     `Jaw and chin are off by ${pct(report.contour)} (target under 5%).`,
-    "Move the canine eyes, nose, mouth, and jaw onto the source positions. Shorten the muzzle so the nose stays on the human nose point. Do not grow a second muzzle and do not add a second eye. Distort breed proportions to fit.",
+    "Keep the image-left half human and the image-right half dog. Do not let the dog cross the sharp center seam or take over the face. Shorten the muzzle so the nose stays on the human nose point. Do not grow a second muzzle and do not add a second eye.",
   ].join(" ");
 }
 
@@ -108,7 +108,7 @@ export function geometryDirective(geometry: FaceGeometry): string {
     geometry.yaw == null
       ? "Keep the source head rotation."
       : `Keep head yaw near ${geometry.yaw.toFixed(1)} degrees.`,
-    "One skull, one eye line, one nose, one mouth, one jaw. No duplicated features and no pasted dog head.",
+    "One skull, one eye line, one nose, one mouth, one jaw. Image-left stays human. Image-right is the retargeted dog and must not cross the sharp center seam.",
   ].join(" ");
 }
 

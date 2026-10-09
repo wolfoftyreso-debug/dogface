@@ -195,17 +195,19 @@ describe("generation prompt", () => {
     assert.doesNotMatch(prompt, /puppy-like hero lighting/i);
   });
 
-  it("can ask for a fused morph instead of a full dog", () => {
+  it("asks for a sharp split locked to the human face", () => {
     const parsed = parseAnalysis(valid);
     assert.ok(parsed);
     const prompt = buildGenerationPrompt(parsed, "", "split");
-    assert.match(prompt, /mid-metamorphosis/i);
-    assert.match(prompt, /single-exposure/i);
-    assert.match(prompt, /one nose/i);
-    assert.match(prompt, /cannot find a cut/i);
-    assert.doesNotMatch(prompt, /exact vertical midline/i);
-    assert.doesNotMatch(prompt, /LEFT HALF/i);
+    assert.match(prompt, /image-left half is human/i);
+    assert.match(prompt, /image-right half is dog/i);
+    assert.match(prompt, /sharp, clean vertical center line/i);
+    assert.match(prompt, /HUMAN GEOMETRY LOCK/i);
+    assert.match(prompt, /dog half take over the face/i);
+    assert.match(prompt, /does not move the mouth/i);
+    assert.doesNotMatch(prompt, /cannot find a cut/i);
     assert.doesNotMatch(prompt, /WHOLE SUBJECT IS A DOG/i);
+    assert.doesNotMatch(prompt, /mid-metamorphosis/i);
   });
 
   it("does not let a locked prompt undo the landmarks", () => {
@@ -230,14 +232,15 @@ describe("generation prompt", () => {
     };
     const prompt = buildGenerationPrompt(parsed, "", "split", geometry);
     assert.match(prompt, /42%,40%/);
-    assert.match(prompt, /nose tip stay at the human nose/i);
+    assert.match(prompt, /nose tip stays at the human nose/i);
     assert.match(prompt, /does not move the mouth/i);
     assert.match(prompt, /LANDMARKS OUTRANK/i);
     assert.match(prompt, /Do not recrop/);
     assert.doesNotMatch(prompt, /Paint the WHOLE frame from scratch/);
     assert.doesNotMatch(prompt, /Do not keep original pixels/);
     assert.doesNotMatch(prompt, /Square 1:1/);
-    assert.doesNotMatch(prompt, /projecting muzzle/);
+    assert.match(prompt, /sharp center seam/i);
+    assert.doesNotMatch(prompt, /cannot find a cut/i);
   });
 });
 

@@ -71,7 +71,7 @@ describe("geometry lock", () => {
   it("puts the human landmarks ahead of breed freedom", () => {
     const prompt = geometryDirective(face());
     assert.match(prompt, /ground truth/i);
-    assert.match(prompt, /pasted dog head/i);
+    assert.match(prompt, /sharp center seam/i);
     assert.match(prompt, /Left eye center/);
   });
 
