@@ -9,6 +9,13 @@ import {
 } from "./analysis";
 import { env } from "./env.server.ts";
 import { buildStudioPrompt, type StudioRequest } from "./studio.ts";
+import {
+  alignmentCorrection,
+  compareAlignment,
+  geometryDirective,
+  parseMeasuredFace,
+  type FaceGeometry,
+} from "./geometry.ts";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode, type PortraitStyle } from "./types";
 
 const ANALYSIS_TIMEOUT_MS = 50_000;
@@ -156,20 +163,114 @@ export async function generateDogImage(
   imageDataUrl: string,
   analysis: AnalysisResult,
   style: PortraitStyle = "dog",
+  extra = "",
+  geometry: FaceGeometry | null = null,
+  guide: string | null = null,
 ): Promise<string> {
-  const prompt = buildGenerationPrompt(analysis, "", style);
-  const body = {
-    model: imageModel(),
-    prompt,
-    n: 1,
-    aspect_ratio: "1:1",
-    resolution: "1k",
-    response_format: "url",
-    image: { url: imageDataUrl, type: "image_url" },
-  };
-  const res = await xaiFetch("/images/edits", body, IMAGE_TIMEOUT_MS);
-  const json = (await res.json()) as ImagePayload;
-  return await dataUrlFromImagePayload(json);
+  const prompt = geometry
+    ? `${geometryDirective(geometry)} ${buildGenerationPrompt(analysis, extra, style)}`
+    : buildGenerationPrompt(analysis, extra, style);
+  const locked = Boolean(geometry && guide);
+  const body = locked
+    ? {
+        model: imageModel(),
+        prompt,
+        n: 1,
+        resolution: "1k",
+        response_format: "url",
+        images: [
+          { url: imageDataUrl, type: "image_url" },
+          { url: guide, type: "image_url" },
+        ],
+      }
+    : {
+        model: imageModel(),
+        prompt,
+        n: 1,
+        aspect_ratio: "1:1",
+        resolution: "1k",
+        response_format: "url",
+        image: { url: imageDataUrl, type: "image_url" },
+      };
+  try {
+    const res = await xaiFetch("/images/edits", body, IMAGE_TIMEOUT_MS);
+    const json = (await res.json()) as ImagePayload;
+    return await dataUrlFromImagePayload(json);
+  } catch (err) {
+    if (!locked) throw err;
+    console.info("[hundtvilling] geometry chart rejected, continuing with landmark text only");
+    const fallback = {
+      model: imageModel(),
+      prompt,
+      n: 1,
+      aspect_ratio: "1:1",
+      resolution: "1k",
+      response_format: "url",
+      image: { url: imageDataUrl, type: "image_url" },
+    };
+    const res = await xaiFetch("/images/edits", fallback, IMAGE_TIMEOUT_MS);
+    const json = (await res.json()) as ImagePayload;
+    return await dataUrlFromImagePayload(json);
+  }
+}
+
+const MEASURE_FORMAT = {
+  type: "json_schema" as const,
+  json_schema: {
+    name: "face_points",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        leftEye: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+        rightEye: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+        nose: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+        mouth: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+        chin: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+        jawLeft: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+        jawRight: { type: "object", additionalProperties: false, properties: { x: { type: "number" }, y: { type: "number" } }, required: ["x", "y"] },
+      },
+      required: ["leftEye", "rightEye", "nose", "mouth", "chin", "jawLeft", "jawRight"],
+    },
+  },
+};
+
+export async function measureResultPoints(imageDataUrl: string): Promise<ReturnType<typeof parseMeasuredFace>> {
+  try {
+    const res = await xaiFetch(
+      "/chat/completions",
+      {
+        model: visionModel(),
+        reasoning_effort: "low",
+        max_tokens: 400,
+        temperature: 0,
+        response_format: MEASURE_FORMAT,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Estimate facial landmark positions on this portrait. Coordinates are 0 to 1 of image width and height. This is not identification. If a feature is canine, mark where that feature sits, not where a textbook dog would place it.",
+          },
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: imageDataUrl, detail: "low" } },
+              { type: "text", text: "Return the landmark positions only." },
+            ],
+          },
+        ],
+      },
+      ANALYSIS_TIMEOUT_MS,
+    );
+    const json = (await res.json()) as { choices?: { message?: { content?: string | null } }[] };
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) return null;
+    return parseMeasuredFace(JSON.parse(content));
+  } catch (err) {
+    console.info("[hundtvilling] geometry measure failed", err instanceof Error ? err.message : "error");
+    return null;
+  }
 }
 
 export async function produceStudioPortrait(
@@ -208,20 +309,45 @@ async function generateWithRetry(
   imageDataUrl: string,
   analysis: AnalysisResult,
   style: PortraitStyle,
+  geometry: FaceGeometry | null = null,
+  guide: string | null = null,
 ): Promise<string> {
   try {
-    return await generateDogImage(imageDataUrl, analysis, style);
+    return await generateDogImage(imageDataUrl, analysis, style, "", geometry, guide);
   } catch (err) {
     if (!(err instanceof AppError) || err.code !== "rate_limit") throw err;
     await sleep(1500);
-    return generateDogImage(imageDataUrl, analysis, style);
+    return generateDogImage(imageDataUrl, analysis, style, "", geometry, guide);
   }
 }
 
 export async function producePortraits(
   imageDataUrl: string,
   analysis: AnalysisResult,
+  geometry: FaceGeometry | null = null,
+  guide: string | null = null,
 ): Promise<{ dog: string; split?: string }> {
-  const split = await generateWithRetry(imageDataUrl, analysis, "split");
-  return { dog: split, split };
+  const lock = geometry && env("GEOMETRY_LOCK") !== "0" ? geometry : null;
+  const chart = lock ? guide : null;
+  const split = await generateWithRetry(imageDataUrl, analysis, "split", lock, chart);
+  if (!lock) return { dog: split, split };
+  const measured = await measureResultPoints(split);
+  if (!measured) {
+    console.info("[hundtvilling] geometry measure unavailable; delivering first candidate");
+    return { dog: split, split };
+  }
+  const report = compareAlignment(lock, measured);
+  console.info(
+    `[hundtvilling] geometry eye=${report.eye.toFixed(3)} nose=${report.nose.toFixed(3)} mouth=${report.mouth.toFixed(3)} contour=${report.contour.toFixed(3)} ok=${report.ok}`,
+  );
+  if (report.ok) return { dog: split, split };
+  const corrected = await generateDogImage(
+    imageDataUrl,
+    analysis,
+    "split",
+    alignmentCorrection(report),
+    lock,
+    chart,
+  );
+  return { dog: corrected, split: corrected };
 }

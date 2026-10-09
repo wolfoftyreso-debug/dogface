@@ -22,6 +22,7 @@ import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
 import { FetchPlay } from "@/components/fetch-play";
+import { detectFaceGeometry, drawGeometryGuide } from "@/lib/face-geometry";
 import { StudioEditor } from "@/components/studio-editor";
 
 const GENERATE_WAIT_MS = 240_000;
@@ -337,12 +338,29 @@ export function DoggStyleApp() {
     setPaidNotice(null);
     const requestId = crypto.randomUUID();
     sourceRef.current = image;
+    let geometry = null;
+    let geometryGuide: string | null = null;
+    try {
+      const detected = await Promise.race([
+        detectFaceGeometry(image),
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 12_000)),
+      ]);
+      if (detected) {
+        geometry = detected;
+        geometryGuide = await drawGeometryGuide(image, detected);
+      }
+    } catch {
+      geometry = null;
+      geometryGuide = null;
+    }
     jobKey(requestId);
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 2500);
     let jobId: string = requestId;
     let delivered = false;
     try {
-      const started = await generateDogTwin({ data: { image, requestId, style: "dog" } });
+      const started = await generateDogTwin({
+        data: { image, requestId, style: "dog", geometry, geometryGuide },
+      });
       let response = started;
       jobId = response.ok ? response.id : requestId;
       jobKey(jobId);
