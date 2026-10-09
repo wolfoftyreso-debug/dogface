@@ -23,6 +23,8 @@ import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
 import { FetchPlay } from "@/components/fetch-play";
 import { detectFaceGeometry, drawGeometryGuide } from "@/lib/face-geometry";
+import { lockSplitPortrait } from "@/lib/split-lock";
+import type { FaceGeometry } from "@/lib/geometry";
 import { StudioEditor } from "@/components/studio-editor";
 
 const GENERATE_WAIT_MS = 240_000;
@@ -91,6 +93,7 @@ export function DoggStyleApp() {
   const [playMode, setPlayMode] = useState<"fetch" | "eat">("fetch");
   const alive = useRef(true);
   const sourceRef = useRef<string | null>(null);
+  const geometryRef = useRef<FaceGeometry | null>(null);
 
   useEffect(() => {
     void listHistory()
@@ -244,14 +247,28 @@ export function DoggStyleApp() {
 
   async function applyReady(response: Extract<Awaited<ReturnType<typeof getGeneration>>, { ok: true }>) {
     if (response.status !== "ready") return false;
+    let imageDataUrl = response.imageDataUrl;
+    if (sourceRef.current && geometryRef.current) {
+      try {
+        const detected = await detectFaceGeometry(response.imageDataUrl);
+        imageDataUrl = await lockSplitPortrait(
+          sourceRef.current,
+          response.imageDataUrl,
+          geometryRef.current,
+          detected,
+        );
+      } catch {
+        imageDataUrl = response.imageDataUrl;
+      }
+    }
     const item: HistoryItem = {
       id: response.id,
       createdAt: Date.now(),
       breed: response.breed,
       reason: response.reason,
-      imageDataUrl: response.imageDataUrl,
+      imageDataUrl,
       sourceDataUrl: sourceRef.current ?? undefined,
-      splitDataUrl: response.splitDataUrl,
+      splitDataUrl: imageDataUrl,
       dogDataUrl: response.dogDataUrl,
     };
     const branded = await stampBrandAll(item).catch(() => item);
@@ -338,6 +355,7 @@ export function DoggStyleApp() {
     setPaidNotice(null);
     const requestId = crypto.randomUUID();
     sourceRef.current = image;
+    geometryRef.current = null;
     let geometry = null;
     let geometryGuide: string | null = null;
     try {
@@ -347,6 +365,7 @@ export function DoggStyleApp() {
       ]);
       if (detected) {
         geometry = detected;
+        geometryRef.current = detected;
         geometryGuide = await drawGeometryGuide(image, detected);
       }
     } catch {
