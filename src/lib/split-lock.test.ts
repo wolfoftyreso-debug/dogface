@@ -4,8 +4,11 @@ import type { FaceGeometry, MeasuredFace } from "./geometry.ts";
 import {
   applyAffine,
   compositeLockedSplit,
+  findCanineNose,
   fitFaceAffine,
   invertAffine,
+  nosePinFor,
+  sampleForNosePin,
   seamColumn,
   warpIsSafe,
   type Raster,
@@ -93,11 +96,36 @@ describe("split lock", () => {
     assert.ok(Math.abs(sampled.x - measured.rightEye.x) < 0.005);
   });
 
-  it("refuses a warp that would tear the face", () => {
+  it("pulls a dropped black nose up onto the human nose without moving the eye", () => {
     const source = face();
-    const measured = shifted(0.2);
-    const fitted = fitFaceAffine(source, measured);
-    assert.ok(fitted);
-    assert.equal(warpIsSafe(source, measured, fitted), false);
+    const generated = fill(40, 40, [150, 140, 130, 255]);
+    for (let y = 24; y <= 30; y++) {
+      for (let x = 22; x <= 28; x++) {
+        const i = (y * 40 + x) * 4;
+        generated.data[i] = 8;
+        generated.data[i + 1] = 8;
+        generated.data[i + 2] = 8;
+      }
+    }
+    const seam = seamColumn(40, source.nose.x);
+    const found = findCanineNose(generated, source.nose, seam);
+    assert.ok(found);
+    assert.ok(found.y > source.nose.y + 0.1);
+    const pin = nosePinFor(source, found);
+    assert.ok(pin);
+    const atNose = sampleForNosePin(pin, source.nose);
+    assert.ok(Math.abs(atNose.y - found.y) < 0.04);
+    const atEye = sampleForNosePin(pin, source.leftEye);
+    assert.ok(Math.abs(atEye.y - source.leftEye.y) < 0.02);
+    const human = fill(40, 40, [220, 30, 30, 255]);
+    const out = compositeLockedSplit(human, generated, seam, null, pin);
+    const nx = Math.round(source.nose.x * 39);
+    const ny = Math.round(source.nose.y * 39);
+    const nosePx = ny * 40 + Math.max(seam, nx);
+    assert.ok(out.data[nosePx * 4] < 40);
+    assert.equal(out.data[0], 220);
+    const eyeY = Math.round(source.leftEye.y * 39);
+    const eyePx = eyeY * 40 + seam;
+    assert.ok(out.data[eyePx * 4] > 100);
   });
 });

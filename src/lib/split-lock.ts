@@ -140,6 +140,83 @@ export function seamColumn(width: number, noseX: number): number {
   return Math.min(width - 1, Math.max(1, col));
 }
 
+export type NosePin = {
+  from: Point;
+  to: Point;
+  eyeY: number;
+  chinY: number;
+};
+
+/** Dark nose leather to the right of the seam. The top of the blob wins over a dark beard. */
+export function findCanineNose(raster: Raster, nose: Point, seam: number): Point | null {
+  const width = raster.width;
+  const height = raster.height;
+  if (width < 8 || height < 8) return null;
+  const x0 = Math.max(0, seam);
+  const x1 = Math.min(width - 1, Math.round((nose.x + 0.28) * width));
+  const y0 = Math.max(0, Math.round((nose.y - 0.04) * height));
+  const y1 = Math.min(height - 1, Math.round((nose.y + 0.34) * height));
+  const dark = (x: number, y: number) => {
+    const i = (y * width + x) * 4;
+    const luma = raster.data[i] * 0.2126 + raster.data[i + 1] * 0.7152 + raster.data[i + 2] * 0.0722;
+    return luma < 42;
+  };
+  let top = -1;
+  for (let y = y0; y <= y1; y++) {
+    let row = 0;
+    for (let x = x0; x <= x1; x++) if (dark(x, y)) row += 1;
+    if (row >= 3) {
+      top = y;
+      break;
+    }
+  }
+  if (top < 0) return null;
+  const yEnd = Math.min(y1, top + Math.max(3, Math.round(height * 0.08)));
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+  for (let y = top; y <= yEnd; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (!dark(x, y)) continue;
+      sumX += x;
+      sumY += y;
+      count += 1;
+    }
+  }
+  if (count < 8) return null;
+  return { x: sumX / count / (width - 1), y: sumY / count / (height - 1) };
+}
+
+export function nosePinFor(geometry: FaceGeometry, found: Point): NosePin | null {
+  const eyeY = Math.min(geometry.leftEye.y, geometry.rightEye.y);
+  const chinY = geometry.chin.y;
+  if (found.y <= eyeY + 0.02 || found.y >= chinY - 0.02) return null;
+  const shift = Math.hypot(found.x - geometry.nose.x, found.y - geometry.nose.y);
+  if (shift < 0.03 || shift > 0.35) return null;
+  return { from: found, to: geometry.nose, eyeY, chinY };
+}
+
+/** Sample the generated face so the canine nose lands on the human nose. Eyes stay put. */
+export function sampleForNosePin(pin: NosePin, out: Point): Point {
+  const eyeY = pin.eyeY;
+  const noseY = pin.to.y;
+  const chinY = pin.chinY;
+  const y = Math.min(1, Math.max(0, out.y));
+  let sy = y;
+  if (y <= eyeY) sy = y;
+  else if (y <= noseY) {
+    const t = (y - eyeY) / Math.max(0.001, noseY - eyeY);
+    sy = eyeY + t * (pin.from.y - eyeY);
+  } else if (y <= chinY) {
+    const t = (y - noseY) / Math.max(0.001, chinY - noseY);
+    sy = pin.from.y + t * (chinY - pin.from.y);
+  }
+  const span = Math.max(0.08, Math.min(Math.abs(noseY - eyeY), Math.abs(chinY - noseY)));
+  const weight = Math.max(0, 1 - Math.abs(y - noseY) / span);
+  const sx = out.x + (pin.from.x - pin.to.x) * weight;
+  return { x: sx, y: Math.min(1, Math.max(0, sy)) };
+}
+
 function sample(raster: Raster, nx: number, ny: number): [number, number, number, number] {
   const x = Math.min(raster.width - 1, Math.max(0, nx * (raster.width - 1)));
   const y = Math.min(raster.height - 1, Math.max(0, ny * (raster.height - 1)));
@@ -169,6 +246,7 @@ export function compositeLockedSplit(
   generated: Raster,
   seam: number,
   inverse: Affine | null,
+  pin: NosePin | null = null,
 ): Raster {
   const width = source.width;
   const height = source.height;
@@ -178,7 +256,11 @@ export function compositeLockedSplit(
     for (let x = seam; x < width; x++) {
       const nx = width <= 1 ? 0 : x / (width - 1);
       const ny = height <= 1 ? 0 : y / (height - 1);
-      const sampled = inverse ? applyAffine(inverse, { x: nx, y: ny }) : { x: nx, y: ny };
+      const sampled = pin
+        ? sampleForNosePin(pin, { x: nx, y: ny })
+        : inverse
+          ? applyAffine(inverse, { x: nx, y: ny })
+          : { x: nx, y: ny };
       const pixel = sample(generated, sampled.x, sampled.y);
       const i = (y * width + x) * 4;
       data[i] = pixel[0];
@@ -218,13 +300,18 @@ export async function lockSplitPortrait(
   ctx.clearRect(0, 0, width, height);
   ctx.drawImage(generatedImage, 0, 0, width, height);
   const generatedData = ctx.getImageData(0, 0, width, height);
-  const fitted = measured ? fitFaceAffine(geometry, measured) : null;
+  const generated = { width, height, data: generatedData.data };
+  const seam = seamColumn(width, geometry.nose.x);
+  const found = findCanineNose(generated, geometry.nose, seam);
+  const pin = found ? nosePinFor(geometry, found) : null;
+  const fitted = !pin && measured ? fitFaceAffine(geometry, measured) : null;
   const inverse = fitted && measured && warpIsSafe(geometry, measured, fitted) ? invertAffine(fitted) : null;
   const locked = compositeLockedSplit(
     { width, height, data: sourceData.data },
-    { width, height, data: generatedData.data },
-    seamColumn(width, geometry.nose.x),
+    generated,
+    seam,
     inverse,
+    pin,
   );
   const image = ctx.createImageData(width, height);
   image.data.set(locked.data);
