@@ -31,6 +31,7 @@ import { env } from "./env.server.ts";
 import { packPortraits, toClientPortraits, unpackPortraits } from "./result-pack";
 import { paymentsReady } from "./stripe.server.ts";
 import { ERROR_MESSAGES, type GenerateErrorCode, type GenerateResult, type PortraitStyle } from "./types";
+import type { StudioRequest } from "./studio.ts";
 
 function fail(code: GenerateErrorCode, remaining?: number): GenerateResult {
   return { ok: false, code, message: ERROR_MESSAGES[code], remaining };
@@ -109,6 +110,7 @@ export async function runDogTwin(
   image: string,
   requestId: string,
   style: PortraitStyle = "dog",
+  studio: StudioRequest | null = null,
 ): Promise<GenerateResult> {
   const payload = validateImagePayload(image);
   if (payload !== "ok") return fail(payload);
@@ -116,7 +118,7 @@ export async function runDogTwin(
   const hasKey = Boolean(env("XAI_API_KEY"));
   logJob(`generate start hasKey=${hasKey} db=${dbConfigured()} req=${requestId.slice(0, 8)}`);
   if (!hasKey) return fail("unavailable");
-  if (!dbConfigured()) return runWithoutDb(image, requestId, style);
+  if (!dbConfigured()) return runWithoutDb(image, requestId, style, studio);
 
   await expireStaleJobs();
   if (!(await generationsEnabled())) return fail("disabled");
@@ -127,7 +129,7 @@ export async function runDogTwin(
     return fail("rate_limit", remainingOf(visitor));
   }
 
-  const payloadHash = sha256(image);
+  const payloadHash = sha256(studio ? `${image}\nstudio:${studio.mode}:${studio.strength}` : image);
   const existing = await getJob(requestId, visitor.id);
   if (existing) {
     if (existing.payloadHash !== payloadHash) return fail("failed", remainingOf(visitor));
@@ -190,16 +192,16 @@ export async function runDogTwin(
   const latest = await getVisitorById(visitor.id);
   const remaining = latest ? remainingOf(latest) : 0;
   if (!onVercel()) {
-    const snap = { requestId, image, style, visitorId: visitor.id, kind };
+    const snap = { requestId, image, style, studio, visitorId: visitor.id, kind };
     setImmediate(() => {
-      void finishDbJob(snap.requestId, snap.image, snap.style, snap.visitorId, snap.kind).catch((err) =>
+      void finishDbJob(snap.requestId, snap.image, snap.style, snap.studio, snap.visitorId, snap.kind).catch((err) =>
         logJob("background job", err),
       );
     });
     return pending(requestId, remaining);
   }
   try {
-    return await finishDbJob(requestId, image, style, visitor.id, kind);
+    return await finishDbJob(requestId, image, style, studio, visitor.id, kind);
   } catch (err) {
     logJob("await job", err);
     return fail("failed", remaining);
@@ -210,11 +212,12 @@ async function finishDbJob(
   requestId: string,
   image: string,
   style: PortraitStyle,
+  studio: StudioRequest | null,
   visitorId: string,
   kind: "free" | "paid" | "open",
 ): Promise<GenerateResult> {
   try {
-    const { analyzePhoto, producePortraits, AppError } = await import("./xai.server.ts");
+    const { analyzePhoto, producePortraits, produceStudioPortrait, AppError } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
       const moved = await setJobStatus(requestId, "rejected", { errorCode: "no_human" });
@@ -240,7 +243,7 @@ async function finishDbJob(
       breedName: analysis.breedName,
       reason: analysis.reason,
     });
-    const portraits = await producePortraits(image, analysis);
+    const portraits = studio ? await produceStudioPortrait(image, analysis, studio) : await producePortraits(image, analysis);
     const marked = await setJobStatus(requestId, "ready", {
       breedId: analysis.breedId,
       breedName: analysis.breedName,
@@ -277,6 +280,7 @@ async function runWithoutDb(
   image: string,
   requestId: string,
   style: PortraitStyle,
+  studio: StudioRequest | null,
 ): Promise<GenerateResult> {
   const visitor = cookieVisitor();
   let kind: "free" | "paid" | "open";
@@ -306,21 +310,22 @@ async function runWithoutDb(
   });
 
   if (!onVercel()) {
-    const snap = { requestId, image, style, visitor, kind };
+    const snap = { requestId, image, style, studio, visitor, kind };
     setImmediate(() => {
-      void finishMemJob(snap.requestId, snap.image, snap.style, snap.visitor, snap.kind).catch((err) =>
+      void finishMemJob(snap.requestId, snap.image, snap.style, snap.studio, snap.visitor, snap.kind).catch((err) =>
         logJob("mem job", err),
       );
     });
     return pending(requestId, remainingOf(visitor));
   }
-  return finishMemJob(requestId, image, style, visitor, kind);
+  return finishMemJob(requestId, image, style, studio, visitor, kind);
 }
 
 async function finishMemJob(
   requestId: string,
   image: string,
   style: PortraitStyle,
+  studio: StudioRequest | null,
   visitor: Visitor,
   kind: "free" | "paid" | "open",
 ): Promise<GenerateResult> {
@@ -331,7 +336,7 @@ async function finishMemJob(
     writeCookieVisitor(visitor);
   };
   try {
-    const { analyzePhoto, producePortraits, AppError } = await import("./xai.server.ts");
+    const { analyzePhoto, producePortraits, produceStudioPortrait, AppError } = await import("./xai.server.ts");
     const analysis = await analyzePhoto(image);
     if (!analysis.validHuman || analysis.subjectSelection === "none") {
       refund();
@@ -365,7 +370,7 @@ async function finishMemJob(
     }
     const current = memJobs().get(requestId);
     if (current) current.status = "generating";
-    const portraits = await producePortraits(image, analysis);
+    const portraits = studio ? await produceStudioPortrait(image, analysis, studio) : await producePortraits(image, analysis);
     const view = toClientPortraits(portraits);
     memJobs().set(requestId, {
       id: requestId,

@@ -1015,3 +1015,182 @@ button.brand {
     width: 55%;
   }
 }
+
+.studio {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.studio-bar,
+.studio-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.studio-bar {
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+}
+
+.studio-bar button,
+.studio-presets button,
+.studio-effects button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.5rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.studio-bar button:disabled,
+.studio-effects button:disabled {
+  opacity: 0.35;
+}
+
+.studio-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 0.7rem;
+  overflow: hidden;
+  border-radius: 1.4rem;
+  background: #1a0d08;
+  touch-action: none;
+}
+
+.studio-stage > img,
+.studio-compare img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.studio-compare {
+  position: absolute;
+  inset: 0;
+}
+
+.studio-badge {
+  position: absolute;
+  left: 0.7rem;
+  top: 0.7rem;
+  z-index: 2;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 251, 243, 0.92);
+  color: #2a1408;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.studio-split {
+  position: absolute;
+  z-index: 3;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.7rem;
+  width: calc(100% - 1.2rem);
+}
+
+.studio-split.is-h {
+  left: 50%;
+  bottom: auto;
+  top: 50%;
+  width: 70%;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.studio-dock {
+  padding: 0.7rem 0.7rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+}
+
+.studio-effects {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+}
+
+.studio-effects button {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-radius: 0.9rem;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.studio-effects button.is-on,
+.studio-presets button.is-on {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+}
+
+.studio-effects small {
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.studio-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.studio-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.6rem;
+}
+
+.studio-strength input {
+  flex: 1;
+  min-height: 2.75rem;
+}
+
+.studio-strength strong {
+  width: 3.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio-presets {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.studio-presets button {
+  flex: 1;
+  border-radius: 999px;
+  background: var(--color-surface);
+}
+
+.studio-render {
+  width: 100%;
+  margin-top: 0.55rem;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  font: inherit;
+  font-weight: 700;
+}
+
+.studio-render:disabled {
+  opacity: 0.5;
+}

@@ -22,6 +22,7 @@ import { RestoreDialog } from "@/components/restore-dialog";
 import { CameraCapture } from "@/components/camera-capture";
 import { ShareSheet } from "@/components/share-sheet";
 import { FetchPlay } from "@/components/fetch-play";
+import { StudioEditor } from "@/components/studio-editor";
 
 const GENERATE_WAIT_MS = 240_000;
 const JOB_KEY = "ht_job_id";
@@ -80,6 +81,7 @@ export function DoggStyleApp() {
   const [shareItem, setShareItem] = useState<HistoryItem | null>(null);
   const [style, setStyle] = useState<PortraitStyle>("dog");
   const [infoOpen, setInfoOpen] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [ageOk, setAgeOk] = useState(false);
   const [aiOk, setAiOk] = useState(false);
@@ -87,6 +89,7 @@ export function DoggStyleApp() {
   const [saving, setSaving] = useState(false);
   const [playMode, setPlayMode] = useState<"fetch" | "eat">("fetch");
   const alive = useRef(true);
+  const sourceRef = useRef<string | null>(null);
 
   useEffect(() => {
     void listHistory()
@@ -246,6 +249,7 @@ export function DoggStyleApp() {
       breed: response.breed,
       reason: response.reason,
       imageDataUrl: response.imageDataUrl,
+      sourceDataUrl: sourceRef.current ?? undefined,
       splitDataUrl: response.splitDataUrl,
       dogDataUrl: response.dogDataUrl,
     };
@@ -332,6 +336,7 @@ export function DoggStyleApp() {
     setShareHint(null);
     setPaidNotice(null);
     const requestId = crypto.randomUUID();
+    sourceRef.current = image;
     jobKey(requestId);
     const paintTimer = window.setTimeout(() => setWorkStep("paint"), 2500);
     let jobId: string = requestId;
@@ -563,6 +568,9 @@ export function DoggStyleApp() {
                   </button>
                 </div>
               ) : null}
+              <Button variant="secondary" onClick={() => setStudioOpen(true)} aria-label="Open studio">
+                Studio
+              </Button>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -721,6 +729,17 @@ export function DoggStyleApp() {
           }}
           onClose={() => setCameraOpen(false)}
           onUnavailable={fallbackNativeCamera}
+        />
+      ) : null}
+      {studioOpen && latest ? (
+        <StudioEditor
+          item={latest}
+          sourceUrl={latest.sourceDataUrl ?? null}
+          onClose={() => setStudioOpen(false)}
+          onRemaining={(next) => {
+            setRemaining(next);
+            setFreeRemaining(0);
+          }}
         />
       ) : null}
       {shareItem ? (

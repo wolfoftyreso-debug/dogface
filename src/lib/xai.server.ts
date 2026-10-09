@@ -8,6 +8,7 @@ import {
   parseAnalysis,
 } from "./analysis";
 import { env } from "./env.server.ts";
+import { buildStudioPrompt, type StudioRequest } from "./studio.ts";
 import { ERROR_MESSAGES, type AnalysisResult, type GenerateErrorCode, type PortraitStyle } from "./types";
 
 const ANALYSIS_TIMEOUT_MS = 50_000;
@@ -169,6 +170,26 @@ export async function generateDogImage(
   const res = await xaiFetch("/images/edits", body, IMAGE_TIMEOUT_MS);
   const json = (await res.json()) as ImagePayload;
   return await dataUrlFromImagePayload(json);
+}
+
+export async function produceStudioPortrait(
+  imageDataUrl: string,
+  analysis: AnalysisResult,
+  studio: StudioRequest,
+): Promise<{ dog: string; split?: string }> {
+  const strength = studio.mode === "full-dog" ? 100 : studio.strength;
+  const body = {
+    model: imageModel(),
+    prompt: buildStudioPrompt(analysis, strength),
+    n: 1,
+    aspect_ratio: "1:1",
+    resolution: "1k",
+    response_format: "url",
+    image: { url: imageDataUrl, type: "image_url" },
+  };
+  const res = await xaiFetch("/images/edits", body, IMAGE_TIMEOUT_MS);
+  const json = (await res.json()) as ImagePayload;
+  return { dog: await dataUrlFromImagePayload(json) };
 }
 
 export async function produceIdentityDog(
