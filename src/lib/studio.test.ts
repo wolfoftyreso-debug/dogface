@@ -53,6 +53,7 @@ describe("studio", () => {
     assert.match(prompt, /30%/);
     assert.match(prompt, /not a transparent dog/i);
     assert.match(prompt, /hazel/);
+    assert.match(prompt, /human positions/i);
     assert.doesNotMatch(prompt, /opacity blend of two photos/i);
   });
 

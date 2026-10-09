@@ -90,7 +90,7 @@ export function alignmentCorrection(report: AlignmentReport): string {
     `Nose center is off by ${pct(report.nose)} (target under 3%).`,
     `Mouth center is off by ${pct(report.mouth)} (target under 3%).`,
     `Jaw and chin are off by ${pct(report.contour)} (target under 5%).`,
-    "Move the canine eyes, nose, mouth, and jaw onto the source positions. Distort breed proportions to fit. Do not add a second face or a second set of features.",
+    "Move the canine eyes, nose, mouth, and jaw onto the source positions. Shorten the muzzle so the nose stays on the human nose point. Do not grow a second muzzle and do not add a second eye. Distort breed proportions to fit.",
   ].join(" ");
 }
 

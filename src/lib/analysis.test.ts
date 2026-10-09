@@ -11,6 +11,7 @@ import {
 } from "./identity.ts";
 import { validateImagePayload } from "./image.ts";
 import type { HistoryItem, QcResult } from "./types.ts";
+import type { FaceGeometry } from "./geometry.ts";
 
 const valid = {
   validHuman: true,
@@ -205,6 +206,38 @@ describe("generation prompt", () => {
     assert.doesNotMatch(prompt, /exact vertical midline/i);
     assert.doesNotMatch(prompt, /LEFT HALF/i);
     assert.doesNotMatch(prompt, /WHOLE SUBJECT IS A DOG/i);
+  });
+
+  it("does not let a locked prompt undo the landmarks", () => {
+    const parsed = parseAnalysis(valid);
+    assert.ok(parsed);
+    const geometry: FaceGeometry = {
+      source: "mediapipe",
+      faceWidth: 0.4,
+      ipd: 0.16,
+      yaw: 0,
+      outline: Array.from({ length: 8 }, (_, index) => ({ x: 0.2 + index * 0.05, y: 0.2 })),
+      leftEye: { x: 0.42, y: 0.4 },
+      rightEye: { x: 0.58, y: 0.4 },
+      nose: { x: 0.5, y: 0.55 },
+      mouth: { x: 0.5, y: 0.68 },
+      chin: { x: 0.5, y: 0.86 },
+      forehead: { x: 0.5, y: 0.18 },
+      leftCheek: { x: 0.32, y: 0.55 },
+      rightCheek: { x: 0.68, y: 0.55 },
+      jawLeft: { x: 0.36, y: 0.74 },
+      jawRight: { x: 0.64, y: 0.74 },
+    };
+    const prompt = buildGenerationPrompt(parsed, "", "split", geometry);
+    assert.match(prompt, /42%,40%/);
+    assert.match(prompt, /nose tip stay at the human nose/i);
+    assert.match(prompt, /does not move the mouth/i);
+    assert.match(prompt, /LANDMARKS OUTRANK/i);
+    assert.match(prompt, /Do not recrop/);
+    assert.doesNotMatch(prompt, /Paint the WHOLE frame from scratch/);
+    assert.doesNotMatch(prompt, /Do not keep original pixels/);
+    assert.doesNotMatch(prompt, /Square 1:1/);
+    assert.doesNotMatch(prompt, /projecting muzzle/);
   });
 });
 

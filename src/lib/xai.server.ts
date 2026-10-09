@@ -12,7 +12,6 @@ import { buildStudioPrompt, type StudioRequest } from "./studio.ts";
 import {
   alignmentCorrection,
   compareAlignment,
-  geometryDirective,
   parseMeasuredFace,
   type FaceGeometry,
 } from "./geometry.ts";
@@ -167,9 +166,7 @@ export async function generateDogImage(
   geometry: FaceGeometry | null = null,
   guide: string | null = null,
 ): Promise<string> {
-  const prompt = geometry
-    ? `${geometryDirective(geometry)} ${buildGenerationPrompt(analysis, extra, style)}`
-    : buildGenerationPrompt(analysis, extra, style);
+  const prompt = buildGenerationPrompt(analysis, extra, style, geometry);
   const locked = Boolean(geometry && guide);
   const body = locked
     ? {

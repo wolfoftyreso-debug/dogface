@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { findBreed, breedCatalogForPrompt } from "./breeds.ts";
 import type { AnalysisResult, PortraitStyle } from "./types.ts";
+import type { FaceGeometry } from "./geometry.ts";
+import { geometryDirective } from "./geometry.ts";
 
 const analysisSchema = z.object({
   validHuman: z.boolean(),
@@ -114,38 +116,47 @@ export function fallbackAnalysis(): AnalysisResult {
   };
 }
 
-export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", style: PortraitStyle = "dog"): string {
+export function buildGenerationPrompt(
+  analysis: AnalysisResult,
+  extra = "",
+  style: PortraitStyle = "dog",
+  geometry: FaceGeometry | null = null,
+): string {
   const anchors = analysis.identityAnchors;
   const split = style === "split";
   const composition = split
     ? [
         `Regenerate this entire photograph as ONE new photorealistic phone selfie of this person mid-metamorphosis into a real living ${analysis.breedName} (${analysis.breedId}).`,
         "This is a single-exposure viral half-human half-dog portrait. One camera, one skull, one neck, one shirt, one background, one grain. Not a collage, not a split-screen, not two photos joined, not a dog head pasted onto a human.",
-        "Paint the WHOLE frame from scratch. Do not keep original pixels. Do not draw a straight vertical line. Do not cut on a midline.",
-        "The face is one continuous head in anatomical transformation: this person's real skin, pores, human eye, and ear remain readable on one side of the face; the other side is a true living dog of this breed with a projecting muzzle, wet nose leather, whisker pads, ear leather, and individual fur strands.",
-        "THROUGH THE CENTER the anatomy interpolates: one nose (human nostril becoming a wet canine leather nose at the septum), lips becoming muzzle, skin pores becoming fur fibers, facial hair becoming muzzle furnishings. The join is organic, irregular, and invisible. Zoom in and you still cannot find a cut.",
+        "Repaint the face in place on this same crop. Do not recrop, rescale, or rotate the head. Do not leave a pasted photograph on one side. The join is painted, but the landmark positions stay.",
+        "LANDMARK LOCK: both eyes stay on the human eye line and keep this interpupillary distance. The nose bridge and nose tip stay at the human nose position. A canine nose is reshaped to fit there. It is not grown forward into a second muzzle. The mouth stays on the human mouth center and width. The muzzle is shortened or lengthened to meet that mouth. It does not move the mouth. The jaw and chin follow the human silhouette. One skull. Breed ears, fur, and color may change. Breed skull proportions may not move the eyes, nose, mouth, or jaw.",
+        "The face is one continuous head in anatomical transformation: this person's real skin, pores, human eye, and ear remain readable on one side of the face; the other side is a true living dog of this breed with wet nose leather, whisker pads, ear leather, and individual fur strands. The canine half is compressed onto the human skull. It does not bring its own eye line, nose, or jaw.",
+        "THROUGH THE CENTER the anatomy interpolates: one nose (human nostril becoming a wet canine leather nose at the same septum), lips becoming muzzle without leaving the human mouth, skin pores becoming fur fibers, facial hair becoming muzzle furnishings. The join is organic, irregular, and invisible. Zoom in and you still cannot find a cut.",
         "Hair across the scalp is one continuous hairstyle becoming coat — same volume, same part, same fiber — so the top of the head does not jump.",
         "This person's clothing continues across the chest unchanged. Background, lamps, walls, color temperature, and photographic grain are identical across the whole frame.",
-        "Both eyes share this person's iris color, gaze direction, and expression. The dog eye sits in a canine lid, not a generic brown dog eye.",
-        "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, color, hair-to-coat, and furnishings.",
+        "Both eyes share this person's iris color, gaze direction, and expression. The dog eye sits in a canine lid on the human eye center, not a generic brown dog eye and not a new eye beside it.",
+        "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, color, hair-to-coat, and furnishings. Breed identity loses when it moves a landmark.",
       ]
     : [
         `Regenerate this entire photograph as a photorealistic camera portrait of a real living ${analysis.breedName} (${analysis.breedId}) that is THIS PERSON as a dog.`,
         "THE WHOLE SUBJECT IS A DOG. Full canine head, muzzle, nose leather, whisker pads, ear leather, neck, and coat. The person has become the dog — not a filter, not a costume, not a split face, not a human skull with fur, not a dog head pasted on a human.",
         "Replace every human facial feature. Zero human skin, zero human nose, zero human mouth, zero human ears in the output.",
+        "The canine eyes still sit on the human eye centers and interpupillary distance. The nose leather sits on the human nose point. The mouth sits on the human mouth. The jaw follows the human head silhouette. Distort breed proportions to fit. Do not invent a larger skull.",
         "Keep this exact crop, head scale, camera angle, clothing silhouette (the dog wears the same clothes), background, and lighting.",
         "THIS PERSON AS THIS BREED. Likeness lives in the eyes, gaze, expression, furnishings, and color — the body is a real dog.",
       ];
   return [
+    geometry ? geometryDirective(geometry) : "",
     ...composition,
     "CAMERA REALISM: 85mm portrait, natural light matching the source, real photographic grain, catchlights, wet nose, separate fur fibers. Looks like a phone photo, not a 3D render.",
     "HARD MICRO-SYNC — copy from the source photo, do not invent or average:",
     "1 IRIS: identical hue, saturation, spokes, limbal ring, and catchlight on BOTH eyes. The dog eye is this person's iris in a canine lid, not a generic brown dog eye.",
-    "2 EYE SPACING: keep inter-pupillary distance, eye-line height, and left/right size relationship exactly. Do not widen or cute-ify the eyes.",
+    "2 EYE SPACING: keep inter-pupillary distance, eye-line height, and left/right size relationship exactly. Do not widen or cute-ify the eyes. Do not add a third eye.",
     "3 EXPRESSION: transfer lid tightness, brow tension, mouth-corner direction, and micro-asymmetry. A deadpan face stays deadpan. Do not default to a panting happy dog.",
     "4 SKIN / LEATHER: warm/cool undertone continues into the dog's muzzle leather and inner ear. Do not lighten, tan, or airbrush.",
     "5 HAIR TEXTURE: curl, wave, coil, straight, frizz, part, volume, and fiber thickness become the dog coat. Fine stays fine. Coarse stays coarse. Voluminous hair stays voluminous. Do not swap in a stock breed coat that fights the hair.",
     "6 ACCENT COLORS: map hair highlights, lip color, cheek flush, clothing-edge and jewelry hues into coat markings and furnishings so the portrait shares one palette.",
+    "0 LANDMARKS OUTRANK THE LIST BELOW: eye centers, interpupillary distance, nose position, mouth position, jaw and chin contour. Breed anatomy is last and loses.",
     "PRIORITY ORDER — never sacrifice a higher item for a lower one: 1 iris color and catchlights, 2 eye spacing and eye relationship, 3 expression, 4 undertone, 5 hair texture to coat, 6 accent colors, 7 gaze, 8 head pose, 9 identity anchors, 10 breed-true canine anatomy.",
     anchors.length ? `HARD IDENTITY ANCHORS (carry onto the dog without turning it human): ${numbered(anchors)}` : "",
     analysis.irisColor && `Iris lock: ${analysis.irisColor} — same iris on the dog eyes.`,
@@ -167,12 +178,14 @@ export function buildGenerationPrompt(analysis: AnalysisResult, extra = "", styl
     "COMPOSITION LOCK: preserve crop, head scale, camera perspective, head orientation, gaze, lighting direction from the source photo.",
     "Do not beautify, symmetrize, smile-ify, or replace with studio hero lighting.",
     split
-      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, Photoshop composite, cut-and-paste, visible seam, vertical line, two photos joined, keeping original pixels on one side, collage, text, watermark, logo, extra faces, costume hood."
-      : "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, human skin, human nose, split face, half-and-half, collage, paste, text, watermark, logo, extra faces, costume hood.",
+      ? "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, Photoshop composite, cut-and-paste, visible seam, vertical line, two photos joined, a second eye line, a second nose, a second mouth, keeping original pixels on one side, collage, text, watermark, logo, extra faces, costume hood."
+      : "Forbidden: CGI, 3D render, cartoon, plastic fur, generic brown dog eyes, stock breed coat that fights the hair, human skin, human nose, split face, half-and-half, a second skull, collage, paste, text, watermark, logo, extra faces, costume hood.",
     extra,
-    split
-      ? "Square 1:1 head-and-shoulders phone selfie: one fused anatomical morph of this person becoming this breed, immediately readable as the same person, no cut line."
-      : "Square 1:1 head-and-shoulders camera portrait of a real dog, immediately readable as this person as this breed.",
+    geometry
+      ? "Keep the source frame and head scale. Do not recrop."
+      : split
+        ? "Square 1:1 head-and-shoulders phone selfie: one fused anatomical morph of this person becoming this breed, immediately readable as the same person, no cut line."
+        : "Square 1:1 head-and-shoulders camera portrait of a real dog, immediately readable as this person as this breed.",
   ]
     .filter((part) => part && part.trim().length > 0)
     .join(" ");
