@@ -82,4 +82,24 @@ describe("human color lock", () => {
     assert.ok(leather < 80);
     assert.ok(out.data[0] >= out.data[2]);
   });
+
+  it("always copies a dark iris onto a blue dog eye", () => {
+    const geometry = face();
+    const source = fill(80, 80, [200, 170, 150, 255]);
+    const eyeX = Math.round(geometry.leftEye.x * 79);
+    const eyeY = Math.round(geometry.leftEye.y * 79);
+    for (let y = eyeY - 3; y <= eyeY + 3; y++) {
+      for (let x = eyeX - 3; x <= eyeX + 3; x++) paint(source, x, y, [46, 28, 16]);
+    }
+    const palette = sampleHumanPalette(source, geometry);
+    assert.ok(palette.iris);
+    assert.ok(palette.iris.r > palette.iris.b);
+    const dog = fill(80, 80, [170, 170, 170, 255]);
+    const dogEyeX = Math.round(geometry.rightEye.x * 79);
+    const dogEyeY = Math.round(geometry.rightEye.y * 79);
+    paint(dog, dogEyeX, dogEyeY, [70, 130, 210]);
+    const out = applyHumanColors(dog, 30, geometry, palette);
+    const i = (dogEyeY * 80 + dogEyeX) * 4;
+    assert.ok(out.data[i] > out.data[i + 2]);
+  });
 });

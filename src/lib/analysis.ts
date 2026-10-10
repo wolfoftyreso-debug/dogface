@@ -150,7 +150,7 @@ export function buildGenerationPrompt(
     ...composition,
     "CAMERA REALISM: 85mm portrait, natural light matching the source, real photographic grain, catchlights, wet nose, separate fur fibers. Looks like a phone photo, not a 3D render.",
     "HARD MICRO-SYNC — copy from the source photo, do not invent or average:",
-    "1 IRIS: identical hue, saturation, spokes, limbal ring, and catchlight on BOTH eyes. The dog eye is this person's iris in a canine lid, not a generic brown dog eye.",
+    "1 IRIS: ALWAYS match eye color. Identical hue, saturation, spokes, limbal ring, and catchlight on BOTH eyes. The dog iris is this person's iris in a canine lid. Never a breed eye: no blue, amber, or brown eye unless that is the person's eye.",
     "2 EYE SPACING: keep inter-pupillary distance, eye-line height, and left/right size relationship exactly. Do not widen or cute-ify the eyes. Do not add a third eye.",
     "3 EXPRESSION: transfer lid tightness, brow tension, mouth-corner direction, and micro-asymmetry. A deadpan face stays deadpan. Do not default to a panting happy dog.",
     "4 SKIN / LEATHER: warm/cool undertone continues into the dog's muzzle leather and inner ear. Do not lighten, tan, or airbrush.",

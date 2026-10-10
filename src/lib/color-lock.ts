@@ -10,7 +10,7 @@ export type HumanPalette = {
 };
 
 const FUR_BLEND = 0.62;
-const EYE_BLEND = 0.8;
+const EYE_BLEND = 1;
 const LEATHER_BLEND = 0.35;
 
 function clampByte(value: number): number {
@@ -116,11 +116,22 @@ function hueDistance(a: RGB, b: RGB): number {
   return delta;
 }
 
+function sampleIris(raster: Raster, geometry: FaceGeometry): RGB | null {
+  const radius = Math.max(3, Math.round(raster.width * 0.03));
+  const wide = Math.max(radius + 2, Math.round(raster.width * 0.05));
+  const candidates = [
+    sampleDisc(raster, geometry.leftEye, radius, 18, 205),
+    sampleDisc(raster, geometry.rightEye, radius, 18, 205),
+    sampleDisc(raster, geometry.leftEye, wide, 18, 205),
+    sampleDisc(raster, geometry.rightEye, wide, 18, 205),
+  ].filter((color): color is RGB => color !== null);
+  if (!candidates.length) return null;
+  return candidates.sort((a, b) => rgbToHsl(b)[1] - rgbToHsl(a)[1])[0];
+}
+
 export function sampleHumanPalette(raster: Raster, geometry: FaceGeometry): HumanPalette {
   const radius = Math.max(2, Math.round(raster.width * 0.015));
-  const iris =
-    sampleDisc(raster, geometry.leftEye, radius, 45, 190) ??
-    sampleDisc(raster, geometry.rightEye, radius, 45, 190);
+  const iris = sampleIris(raster, geometry);
   const skin =
     sampleDisc(raster, geometry.leftCheek, radius, 50, 230) ??
     sampleDisc(raster, geometry.nose, radius, 50, 230);
@@ -156,7 +167,7 @@ export function applyHumanColors(
   const data = new Uint8ClampedArray(raster.data);
   const eyeX = Math.round(geometry.rightEye.x * (raster.width - 1));
   const eyeY = Math.round(geometry.rightEye.y * (raster.height - 1));
-  const eyeR = Math.max(3, Math.round(raster.width * 0.035));
+  const eyeR = Math.max(4, Math.round(raster.width * 0.05));
   for (let y = 0; y < raster.height; y++) {
     for (let x = seam; x < raster.width; x++) {
       const i = (y * raster.width + x) * 4;
@@ -164,8 +175,10 @@ export function applyHumanColors(
       const tone = luma(pixel);
       const inEye = (x - eyeX) ** 2 + (y - eyeY) ** 2 <= eyeR * eyeR;
       let next = pixel;
-      if (inEye && palette.iris && tone >= 40 && tone <= 200) {
+      if (inEye && palette.iris && tone >= 18 && tone <= 230) {
         next = recolorToward(pixel, palette.iris, EYE_BLEND);
+      } else if (inEye) {
+        next = pixel;
       } else if (tone < 40 && palette.skin) {
         next = recolorToward(pixel, palette.skin, LEATHER_BLEND);
       } else if (palette.hair && tone >= 40 && tone <= 225) {
