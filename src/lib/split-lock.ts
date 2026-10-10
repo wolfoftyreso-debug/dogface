@@ -1,4 +1,5 @@
 import type { FaceGeometry, MeasuredFace, Point } from "./geometry.ts";
+import { applyHumanColors, sampleHumanPalette } from "./color-lock.ts";
 
 export type Affine = {
   a: number;
@@ -342,8 +343,14 @@ export async function lockSplitPortrait(
     inverse,
     pin,
   );
+  const colored = applyHumanColors(
+    locked,
+    seam,
+    geometry,
+    sampleHumanPalette({ width, height, data: sourceData.data }, geometry),
+  );
   const image = ctx.createImageData(width, height);
-  image.data.set(locked.data);
+  image.data.set(colored.data);
   ctx.putImageData(image, 0, 0);
   return canvas.toDataURL("image/jpeg", 0.92);
 }

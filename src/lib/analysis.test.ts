@@ -202,7 +202,7 @@ describe("generation prompt", () => {
     assert.match(prompt, /image-left half is human/i);
     assert.match(prompt, /image-right half is dog/i);
     assert.match(prompt, /sharp, clean vertical center line/i);
-    assert.match(prompt, /HUMAN GEOMETRY LOCK/i);
+    assert.match(prompt, /COLOR LOCK/i);
     assert.match(prompt, /dog half take over the face/i);
     assert.match(prompt, /does not move the mouth/i);
     assert.doesNotMatch(prompt, /cannot find a cut/i);
